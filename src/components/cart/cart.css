@@ -1,0 +1,185 @@
+/* Style de base du tiroir */
+.cart-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100vh; /* Utilisation de viewport height */
+  background-color: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+/* États du tiroir */
+.cart-drawer-open {
+  transform: translateX(0);
+}
+
+.cart-drawer-closed {
+  transform: translateX(100%);
+}
+
+/* En-tête du tiroir */
+.cart-drawer-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
+  flex-shrink: 0; /* Empêche le rétrécissement */
+}
+
+/* Bouton de fermeture */
+.cart-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.cart-close-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+  color: #4b5563;
+}
+
+/* Contenu du panier */
+.cart-content { /* Ajout du point manquant */
+  flex: 1; /* Prend tout l'espace disponible */
+  padding: 1rem;
+  overflow-y: auto;
+  min-height: 0; /* Important pour le scroll */
+}
+
+.cart-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Zone de paiement */
+.cart-checkout {
+  padding: 1rem;
+  background-color: white;
+  position: sticky;
+  bottom: 0;
+  margin-top: auto; /* Pousse le bouton vers le bas */
+  border-top: 1px solid #eee; /* Optionnel: ajoute une séparation */
+}
+
+.checkout-btn {
+  width: 100%;
+  background-color: rgb(237, 19, 92);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.checkout-btn:hover {
+  background-color: #9cbfefd3;
+  transition: background-color 0.2s ease;
+}
+
+/* Media Queries */
+@media (min-width: 640px) {
+  .cart-drawer {
+    width: 50%;
+  }
+}
+
+@media (min-width: 768px) {
+  .cart-drawer {
+    width: 25%;
+  }
+}
+/*cart*/
+
+/* Conteneur principal */
+.cart-container {
+  width: 100%;
+}
+
+/* Article individuel du panier */
+.cart-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Image du produit */
+.cart-item-image {
+  width: 5rem;
+  height: 6rem;
+  object-fit: cover;
+  margin-right: 1rem;
+  border-radius: 0.25rem;
+}
+
+/* Détails du produit */
+.cart-item-details {
+  flex: 1;
+}
+
+.cart-item-title {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.cart-item-brand {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Contrôles de quantité */
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.quantity-btn {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+  background: white;
+  cursor: pointer;
+}
+
+.quantity-value {
+  margin: 0 1rem;
+}
+
+/* Actions et prix */
+.cart-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.cart-item-price {
+  font-weight: 500;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.delete-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+  margin-top: 0.5rem;
+  color: #dc2626;
+}
