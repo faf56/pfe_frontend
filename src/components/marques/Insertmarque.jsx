@@ -1,148 +1,305 @@
-import React, { useState } from 'react';
-import { Modal } from 'react-bootstrap';
-import { addmarque } from "../../service/marqueservice";
-import { FilePond, registerPlugin } from 'react-filepond';
-import 'filepond/dist/filepond.min.css';
-import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
-import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
-import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
-registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
+"use client"
+
+import { useState } from "react"
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  CircularProgress,
+  styled,
+  Alert,
+  Divider,
+} from "@mui/material"
+import { Close, Add as AddIcon } from "@mui/icons-material"
+import { addmarque } from "../../service/marqueservice"
+import { FilePond, registerPlugin } from "react-filepond"
+import "filepond/dist/filepond.min.css"
+import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation"
+import FilePondPluginImagePreview from "filepond-plugin-image-preview"
+import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css"
+
+registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview)
+
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  "& .MuiDialog-paper": {
+    borderRadius: "12px",
+    boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
+    overflow: "hidden",
+  },
+}))
+
+const DialogHeader = styled(DialogTitle)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "16px 24px",
+  backgroundColor: "#f8f9fa",
+  borderBottom: "1px solid #e0e0e0",
+}))
+
+const FormField = styled(TextField)(({ theme }) => ({
+  marginBottom: "16px",
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "8px",
+  },
+}))
+
+const SubmitButton = styled(Button)(({ theme }) => ({
+  borderRadius: "8px",
+  padding: "10px 24px",
+  textTransform: "none",
+  fontWeight: 600,
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+}))
+
+const ImageUploadSection = styled(Box)(({ theme }) => ({
+  marginTop: "16px",
+  padding: "16px",
+  borderRadius: "8px",
+  border: "1px dashed #e0e0e0",
+  backgroundColor: "#f8f9fa",
+}))
 
 const Insertmarque = ({ show, handleClose, handleAddmarque }) => {
   const [marque, setMarque] = useState({
-    nommarque: '',
-    imagemarque: ''
-  });
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+    nommarque: "",
+    imagemarque: "",
+  })
+  const [files, setFiles] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [formErrors, setFormErrors] = useState({})
 
-  // Fonction pour gérer l'upload de l'image sur Cloudinary en utilisant fetch
+  const validateForm = () => {
+    const errors = {}
+
+    if (!marque.nommarque.trim()) errors.nommarque = "Le nom de la marque est requis"
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setMarque({ ...marque, [name]: value })
+
+    // Clear error for this field when user types
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: null })
+    }
+  }
+
   const uploadImageToCloudinary = async (file) => {
-    const data = new FormData();
-    data.append('file', file);
-    data.append('upload_preset', 'test2025'); // Remplacer par votre propre preset Cloudinary
-    data.append('cloud_name', 'dr09h69he'); // Remplacer par votre cloud name
+    const data = new FormData()
+    data.append("file", file)
+    data.append("upload_preset", "test2025")
+    data.append("cloud_name", "dr09h69he")
 
     try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/dr09h69he/image/upload', {
-        method: 'POST',
-        body: data
-      });
+      const response = await fetch("https://api.cloudinary.com/v1_1/dr09h69he/image/upload", {
+        method: "POST",
+        body: data,
+      })
 
       if (!response.ok) {
-        throw new Error('Échec de l\'upload de l\'image');
+        throw new Error("Échec de l'upload de l'image")
       }
 
-      const result = await response.json();
-      return result.secure_url;
+      const result = await response.json()
+      return result.secure_url
     } catch (error) {
-      console.error('Erreur lors de l\'upload de l\'image:', error);
-      throw error;
+      console.error("Erreur lors de l'upload de l'image:", error)
+      throw error
     }
-  };
+  }
 
-  // Configuration du serveur FilePond pour l'upload des images
   const serverOptions = {
     process: (fieldName, file, metadata, load, error, progress, abort) => {
       uploadImageToCloudinary(file)
         .then((imageUrl) => {
-          setMarque((prevMarque) => ({
-            ...prevMarque,
-            imagemarque: imageUrl, // Ajouter l'URL de l'image à la marque
-          }));
-          load(imageUrl);
+          setMarque((prevMarque) => ({ ...prevMarque, imagemarque: imageUrl }))
+          load(imageUrl)
         })
         .catch((err) => {
-          error('Échec du téléchargement de l\'image');
-          abort();
-        });
+          error("Échec du téléchargement de l'image")
+          abort()
+        })
     },
-  };
+  }
 
-  // Fonction de soumission du formulaire
   const handleSubmit = async (event) => {
-    event.preventDefault();
+    event.preventDefault()
 
-    // Basic validation: Check if the name is not empty
-    if (!marque.nommarque) {
-      setErrorMessage('Le nom de la marque est requis');
-      return;
-    }
+    if (!validateForm()) return
 
-    setLoading(true);
+    setLoading(true)
+    setError(null)
+
     try {
-      await addmarque(marque).then((res) => handleAddmarque(res.data));
-      handleClose(); // Close the modal after successful submission
-      setMarque({ nommarque: '', imagemarque: '' }); // Reset the state
-      setFiles([]); // Clear files in FilePond
-      setErrorMessage(''); // Clear any previous error message
-    } catch (error) {
-      setErrorMessage('Erreur lors de l\'ajout de la marque');
-      console.error('Erreur lors de l\'ajout de la marque :', error);
+      const response = await addmarque(marque)
+      handleAddmarque(response.data)
+      handleClose()
+
+      // Reset form
+      setMarque({
+        nommarque: "",
+        imagemarque: "",
+      })
+      setFiles([])
+    } catch (err) {
+      console.error("Erreur lors de l'ajout de la marque :", err)
+      setError(err.response?.data?.message || "Une erreur est survenue lors de l'ajout de la marque")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const handleCloseWithFocus = () => {
+    // Créer un élément temporaire pour capturer le focus
+    const tempButton = document.createElement("button")
+    tempButton.style.position = "fixed"
+    tempButton.style.opacity = "0"
+    tempButton.style.pointerEvents = "none"
+    document.body.appendChild(tempButton)
+
+    // Focus sur cet élément temporaire
+    tempButton.focus()
+
+    // Fermer le dialogue
+    handleClose()
+
+    // Supprimer l'élément temporaire après un court délai
+    setTimeout(() => {
+      document.body.removeChild(tempButton)
+    }, 100)
+  }
 
   return (
-    <div className="form-container">
-      <Modal show={show} onHide={handleClose}>
-        <form className="marque-form" onSubmit={handleSubmit}>
-          <Modal.Header closeButton>
-            <h2>Ajouter Marque</h2>
-          </Modal.Header>
+    <StyledDialog
+      open={show}
+      onClose={(event, reason) => {
+        if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+          // Ne fermez pas si c'est un clic sur l'arrière-plan ou la touche Escape
+          if (!loading) handleClose()
+        }
+      }}
+      fullWidth
+      maxWidth="sm"
+      container={() => document.body}
+      disablePortal={false}
+      keepMounted={false}
+      disableEnforceFocus={false}
+      disableAutoFocus={false}
+      disableRestoreFocus={true}
+      hideBackdrop={false}
+    >
+      <DialogHeader>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <AddIcon sx={{ color: "#1976d2" }} />
+          <Typography variant="h6">Ajouter une marque</Typography>
+        </Box>
+        <IconButton edge="end" color="inherit" onClick={handleCloseWithFocus} disabled={loading} aria-label="close">
+          <Close />
+        </IconButton>
+      </DialogHeader>
 
-          <Modal.Body>
-            {errorMessage && <div className="error-message">{errorMessage}</div>}
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 3, overflowY: "auto", maxHeight: "calc(100vh - 170px)" }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: "8px" }}>
+              {error}
+            </Alert>
+          )}
 
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="nommarque">Nom Marque</label>
-                <input
-                  type="text"
-                  id="nommarque"
-                  value={marque.nommarque}
-                  onChange={(e) => setMarque({ ...marque, nommarque: e.target.value })}
-                  className="form-input"
-                  placeholder="Entrez le nom de la marque"
-                  required
+          <FormField
+            fullWidth
+            label="Nom de la marque"
+            name="nommarque"
+            value={marque.nommarque}
+            onChange={handleChange}
+            error={!!formErrors.nommarque}
+            helperText={formErrors.nommarque}
+            disabled={loading}
+            required
+            placeholder="Entrez le nom de la marque"
+            sx={{ mb: 3 }}
+          />
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+            Image de la marque
+          </Typography>
+
+          <ImageUploadSection>
+            <FilePond
+              files={files}
+              onupdatefiles={setFiles}
+              allowMultiple={false}
+              server={serverOptions}
+              name="file"
+              labelIdle='Glissez et déposez votre image ou <span class="filepond--label-action">Parcourir</span>'
+              labelFileProcessing="Téléchargement"
+              labelFileProcessingComplete="Téléchargement terminé"
+              labelTapToCancel="Cliquez pour annuler"
+              labelTapToRetry="Cliquez pour réessayer"
+              labelFileProcessingError="Erreur lors du téléchargement"
+            />
+
+            {marque.imagemarque && (
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Aperçu de l'image
+                </Typography>
+                <Box
+                  component="img"
+                  src={marque.imagemarque}
+                  alt="Aperçu de la marque"
+                  sx={{
+                    maxWidth: "100%",
+                    maxHeight: "200px",
+                    borderRadius: "8px",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                  }}
                 />
-              </div>
+              </Box>
+            )}
+          </ImageUploadSection>
+        </DialogContent>
 
-              <div style={{ width: '100%', margin: 'auto', padding: '1%' }}>
-                <FilePond
-                  files={files}
-                  acceptedFileTypes="image/*"
-                  onupdatefiles={setFiles}
-                  allowMultiple={false} // Autoriser une seule image
-                  server={serverOptions}
-                  name="file"
-                />
-              </div>
-            </div>
-          </Modal.Body>
+        <DialogActions
+          sx={{ p: 2, backgroundColor: "#f8f9fa", borderTop: "1px solid #e0e0e0", position: "sticky", bottom: 0 }}
+        >
+          <Button
+            onClick={handleCloseWithFocus}
+            disabled={loading}
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+            }}
+          >
+            Annuler
+          </Button>
+          <SubmitButton
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
+          >
+            {loading ? "Enregistrement..." : "Ajouter la marque"}
+          </SubmitButton>
+        </DialogActions>
+      </form>
+    </StyledDialog>
+  )
+}
 
-          <Modal.Footer>
-            <button
-              type="submit"
-              className="form-submit-button"
-              disabled={loading}
-            >
-              {loading ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-            <button
-              type="button"
-              className="form-reset-button"
-              onClick={() => handleClose()}
-            >
-              Annuler
-            </button>
-          </Modal.Footer>
-        </form>
-      </Modal>
-    </div>
-  );
-};
+export default Insertmarque
 
-export default Insertmarque;

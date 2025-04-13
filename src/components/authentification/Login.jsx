@@ -1,4 +1,4 @@
-import React from 'react';
+
 import {useState,useEffect } from 'react'
 import {signin} from "../../service/authservice"
 import './Style.css';
@@ -30,7 +30,7 @@ const Login = () => {
     localStorage.setItem("user",JSON.stringify(result.data.user))
     localStorage.setItem("refresh_token",result.data.refreshToken)
     if (result.data.user.role==="admin") navigate('/admin')
-    else navigate('/')
+    else navigate('/mon-compte')
     }
     else alert ("Compte n'est pas encore activé")
     }
@@ -76,7 +76,7 @@ const Login = () => {
           </div>
           <button type='submit'>Login</button>
           <div className="register-link">
-            <p>Don't have an account? <Link to="/register">Register</Link></p>
+            <p>Pas de compte ? <Link to="/register">Créez-en un</Link></p>
           </div>
         </form>
       </div>

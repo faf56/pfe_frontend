@@ -3,10 +3,19 @@ import { MdDeleteForever } from "react-icons/md";
 import {Link } from 'react-router-dom'
 import axios from '../../api/axios';
 
+
+
 const CartContents = () => {
-  const {cartDetails, removeItem, clearCart, totalPrice,cartCount,incrementItem,decrementItem} =useShoppingCart();
+  const {cartDetails, removeItem, clearCart, totalPrice,cartCount,incrementItem,decrementItem,formattedTotalPrice} =useShoppingCart();
+ 
+
   const cartItems = Object.values(cartDetails);
+  const computedTotalPrice = cartItems.reduce((total, item) => {
+    return total + (item.prix * item.quantity);
+  }, 0);
+ 
   return (
+    <>
     <div className="cart-container">
       {cartItems.map((item) => (
         <div key={item.id} className='cart-item'>
@@ -37,15 +46,27 @@ const CartContents = () => {
             </div>
           </div>
           <div className="cart-item-actions">
-            <p className="cart-item-price">{item.prix}TND</p>
+            <p className="cart-item-price">{Number(item.prix).toFixed(3)}TND</p>
+            <div className="cart-product-total-price">
+            {(Number(item.prix) * item.quantity).toFixed(3)} TND
+              </div>
             <button onClick={() => removeItem(item.id)}>
               <MdDeleteForever className="delete-icon" />
             </button>
           </div>
         </div>
       ))}
+      
     </div>
+
+    <div className="cart-total">
+        <h3>Total: {computedTotalPrice.toFixed(3)} TND</h3>
+      </div>
     
+    <button className="clear-btn" onClick={() => clearCart()}>
+Clear Cart
+</button>
+    </>
   )
 }
 

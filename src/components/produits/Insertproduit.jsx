@@ -1,251 +1,496 @@
-import React, { useEffect, useState } from 'react';
-import Modal from 'react-bootstrap/Modal';
-import Button from 'react-bootstrap/Button';
-import { fetchscategories } from "../../service/scategorieservice";
-import { fetchmarques } from '../../service/marqueservice';
-import { addproduit } from "../../service/produitservice";
-import { FilePond, registerPlugin } from 'react-filepond';
-import 'filepond/dist/filepond.min.css';
-import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
-import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
-import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
-import axios from '../../api/axios';
+"use client"
 
-registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
+import { useEffect, useState } from "react"
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  CircularProgress,
+  styled,
+  Divider,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
+} from "@mui/material"
+import { Close, Add as AddIcon } from "@mui/icons-material"
+import { fetchscategories } from "../../service/scategorieservice"
+import { fetchmarques } from "../../service/marqueservice"
+import { addproduit } from "../../service/produitservice"
+import { FilePond, registerPlugin } from "react-filepond"
+import "filepond/dist/filepond.min.css"
+import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation"
+import FilePondPluginImagePreview from "filepond-plugin-image-preview"
+import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css"
 
-const Insertproduit = ({ show, handleClose, handleAddproduct, pro }) => {
+registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview)
+
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  "& .MuiDialog-paper": {
+    borderRadius: "12px",
+    boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
+    overflow: "hidden",
+  },
+}))
+
+const DialogHeader = styled(DialogTitle)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "16px 24px",
+  backgroundColor: "#f8f9fa",
+  borderBottom: "1px solid #e0e0e0",
+}))
+
+const FormField = styled(TextField)(({ theme }) => ({
+  marginBottom: "16px",
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "8px",
+  },
+}))
+
+const FormSelect = styled(FormControl)(({ theme }) => ({
+  marginBottom: "16px",
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "8px",
+  },
+}))
+
+const SubmitButton = styled(Button)(({ theme }) => ({
+  borderRadius: "8px",
+  padding: "10px 24px",
+  textTransform: "none",
+  fontWeight: 600,
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+}))
+
+const ImageUploadSection = styled(Box)(({ theme }) => ({
+  marginTop: "16px",
+  padding: "16px",
+  borderRadius: "8px",
+  border: "1px dashed #e0e0e0",
+  backgroundColor: "#f8f9fa",
+}))
+
+const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
   const [produit, setProduit] = useState({
-    title: '',
-    description: '',
-    marqueID: '',
-    scategorieID: '',
+    title: "",
+    description: "",
+    marqueID: "",
+    scategorieID: "",
     stock: 0,
     prix: 0,
-    imagepro: ''
-  });
+    imagepro: "",
+  })
 
-  const [scategories, setScategories] = useState([]);
-  const [marques, setMarques] = useState([]);
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [scategories, setScategories] = useState([])
+  const [marques, setMarques] = useState([])
+  const [files, setFiles] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [formErrors, setFormErrors] = useState({})
+  const [loadingData, setLoadingData] = useState(true)
 
   const loadscategories = async () => {
     try {
-      const res = await fetchscategories();
-      setScategories(res.data);
+      setLoadingData(true)
+      const res = await fetchscategories()
+      setScategories(res.data)
     } catch (error) {
-      console.log("Erreur lors du chargement des catégories : ", error);
+      console.log("Erreur lors du chargement des catégories : ", error)
+      setError("Erreur lors du chargement des catégories")
+    } finally {
+      setLoadingData(false)
     }
-  };
+  }
 
   const loadmarques = async () => {
     try {
-      const res = await fetchmarques();
-      setMarques(res.data);
+      setLoadingData(true)
+      const res = await fetchmarques()
+      setMarques(res.data)
     } catch (error) {
-      console.log("Erreur lors du chargement des marques : ", error);
+      console.log("Erreur lors du chargement des marques : ", error)
+      setError("Erreur lors du chargement des marques")
+    } finally {
+      setLoadingData(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadscategories();
-    loadmarques();
-  }, []);
+    loadscategories()
+    loadmarques()
+  }, [])
 
-  useEffect(() => {
-    if (pro) {
-      setProduit({
-        ...pro,
-        marqueID: pro.marqueID?._id || '',
-        scategorieID: pro.scategorieID?._id || '',
-        imagepro: pro.imagepro || ''
-      });
+  const validateForm = () => {
+    const errors = {}
 
-      setFiles(pro.imagepro ? [{ source: pro.imagepro, options: { type: 'local' } }] : []);
+    if (!produit.title.trim()) errors.title = "Le nom du produit est requis"
+    if (!produit.description.trim()) errors.description = "La désignation est requise"
+    if (!produit.marqueID) errors.marqueID = "La marque est requise"
+    if (!produit.scategorieID) errors.scategorieID = "La catégorie est requise"
+
+    if (produit.stock <= 0) {
+      errors.stock = "Le stock doit être supérieur à 0"
     }
-  }, [pro]);
+
+    if (produit.prix <= 0) {
+      errors.prix = "Le prix doit être supérieur à 0"
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setProduit({ ...produit, [name]: value })
+
+    // Clear error for this field when user types
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: null })
+    }
+  }
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    try {
-      if (!produit.title || !produit.description || !produit.marqueID || !produit.scategorieID || produit.stock <= 0 || produit.prix <= 0) {
-        alert("Tous les champs doivent être remplis correctement.");
-        setLoading(false);
-        return;
-      }
+    event.preventDefault()
 
-      await addproduit(produit).then((res) => {
-        handleAddproduct(res.data);
-      });
-      handleClose();
+    if (!validateForm()) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await addproduit(produit)
+      handleAddproduct(response.data)
+      handleClose()
+
+      // Reset form
       setProduit({
-        title: '',
-        description: '',
-        marqueID: '',
-        scategorieID: '',
+        title: "",
+        description: "",
+        marqueID: "",
+        scategorieID: "",
         stock: 0,
         prix: 0,
-        imagepro: ''
-      });
-      setFiles([]);
-    } catch (error) {
-      console.error("Erreur lors de l'ajout du produit :", error);
-      setLoading(false);
+        imagepro: "",
+      })
+      setFiles([])
+    } catch (err) {
+      console.error("Erreur lors de l'ajout du produit :", err)
+      setError(err.response?.data?.message || "Une erreur est survenue lors de l'ajout du produit")
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
   const uploadImageToCloudinary = async (file) => {
-    const data = new FormData();
-    data.append('file', file);
-    data.append('upload_preset', 'perlaimg');
+    const data = new FormData()
+    data.append("file", file)
+    data.append("upload_preset", "perlaimg")
 
     try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/dr09h69he/image/upload', {
-        method: 'POST',
-        body: data
-      });
+      const response = await fetch("https://api.cloudinary.com/v1_1/dr09h69he/image/upload", {
+        method: "POST",
+        body: data,
+      })
 
-      const result = await response.json();
+      const result = await response.json()
       if (result.secure_url) {
-        return result.secure_url;
+        return result.secure_url
       } else {
-        throw new Error("Échec de l'upload de l'image.");
+        throw new Error("Échec de l'upload de l'image.")
       }
     } catch (error) {
-      console.error("Erreur lors de l'upload de l'image :", error);
-      throw error;
+      console.error("Erreur lors de l'upload de l'image :", error)
+      throw error
     }
-  };
+  }
 
   const serverOptions = {
     process: (fieldName, file, metadata, load, error, progress, abort) => {
       uploadImageToCloudinary(file)
         .then((imageUrl) => {
-          setProduit((prevProduit) => ({ ...prevProduit, imagepro: imageUrl }));
-          load(imageUrl);
+          setProduit((prevProduit) => ({ ...prevProduit, imagepro: imageUrl }))
+          load(imageUrl)
         })
         .catch((err) => {
-          error("Erreur d'upload d'image");
-          abort();
-        });
-    }
-  };
+          error("Erreur d'upload d'image")
+          abort()
+        })
+    },
+  }
+
+  const handleCloseWithFocus = () => {
+    // Créer un élément temporaire pour capturer le focus
+    const tempButton = document.createElement("button")
+    tempButton.style.position = "fixed"
+    tempButton.style.opacity = "0"
+    tempButton.style.pointerEvents = "none"
+    document.body.appendChild(tempButton)
+
+    // Focus sur cet élément temporaire
+    tempButton.focus()
+
+    // Fermer le dialogue
+    handleClose()
+
+    // Supprimer l'élément temporaire après un court délai
+    setTimeout(() => {
+      document.body.removeChild(tempButton)
+    }, 100)
+  }
 
   return (
-    <div className="form-container">
-      <Modal show={show} onHide={handleClose}>
-        <form className="article-form" onSubmit={handleSubmit}>
-          <Modal.Header closeButton>
-            <h2>Ajouter Produit</h2>
-          </Modal.Header>
+    <StyledDialog
+      open={show}
+      onClose={(event, reason) => {
+        if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+          // Ne fermez pas si c'est un clic sur l'arrière-plan ou la touche Escape
+          if (!loading) handleClose()
+        }
+      }}
+      fullWidth
+      maxWidth="md"
+      container={() => document.body}
+      disablePortal={false}
+      keepMounted={false}
+      disableEnforceFocus={false}
+      disableAutoFocus={false}
+      disableRestoreFocus={true}
+      hideBackdrop={false}
+    >
+      <DialogHeader>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <AddIcon sx={{ color: "#1976d2" }} />
+          <Typography variant="h6">Ajouter un produit</Typography>
+        </Box>
+        <IconButton edge="end" color="inherit" onClick={handleCloseWithFocus} disabled={loading} aria-label="close">
+          <Close />
+        </IconButton>
+      </DialogHeader>
 
-          <Modal.Body>
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="title">Nom</label>
-                <input
-                  type="text"
-                  id="title"
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 3, overflowY: "auto", maxHeight: "calc(100vh - 170px)" }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: "8px" }}>
+              {error}
+            </Alert>
+          )}
+          {loadingData && (
+            <Alert severity="info" sx={{ mb: 2, borderRadius: "8px" }}>
+              Chargement des données en cours...
+            </Alert>
+          )}
+
+          {loadingData ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                  Informations du produit
+                </Typography>
+
+                <FormField
+                  fullWidth
+                  label="Nom du produit"
+                  name="title"
                   value={produit.title}
-                  onChange={(e) => setProduit({ ...produit, title: e.target.value })}
-                  className="form-input"
-                  placeholder="Entrez le nom de l'article"
+                  onChange={handleChange}
+                  error={!!formErrors.title}
+                  helperText={formErrors.title}
+                  disabled={loading}
                   required
+                  placeholder="Entrez le nom du produit"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="description">Désignation</label>
-                <input
-                  type="text"
-                  id="description"
+
+                <FormField
+                  fullWidth
+                  label="Désignation"
+                  name="description"
                   value={produit.description}
-                  onChange={(e) => setProduit({ ...produit, description: e.target.value })}
-                  className="form-input"
-                  placeholder="Entrez la désignation de l'article"
+                  onChange={handleChange}
+                  error={!!formErrors.description}
+                  helperText={formErrors.description}
+                  disabled={loading}
                   required
+                  placeholder="Entrez la désignation du produit"
+                  multiline
+                  rows={2}
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="marque">Marque</label>
-                <select
-                  id="marque"
-                  className="form-control"
-                  value={produit.marqueID}
-                  onChange={(e) => setProduit({ ...produit, marqueID: e.target.value })}
-                  required
-                >
-                  <option value="">Sélectionner une marque</option>
-                  {marques.map((marq) => (
-                    <option key={marq._id} value={marq._id}>
-                      {marq.nommarque}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="stock">Quantité</label>
-                <input
-                  type="number"
-                  id="stock"
-                  value={produit.stock}
-                  onChange={(e) => setProduit({ ...produit, stock: e.target.value })}
-                  className="form-input"
-                  placeholder="Entrez la quantité en stock"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="prix">Prix</label>
-                <input
-                  type="number"
-                  id="prix"
-                  value={produit.prix}
-                  onChange={(e) => setProduit({ ...produit, prix: e.target.value })}
-                  className="form-input"
-                  placeholder="Entrez le prix"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="category">Catégorie</label>
-                <select
-                  id="category"
-                  className="form-control"
-                  value={produit.scategorieID}
-                  onChange={(e) => setProduit({ ...produit, scategorieID: e.target.value })}
-                  required
-                >
-                  <option value="">Sélectionner une catégorie</option>
-                  {scategories.map((scat) => (
-                    <option key={scat._id} value={scat._id}>
-                      {scat.nomscategorie}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ width: "80%", margin: "auto", padding: "1%" }}>
-                <FilePond
-                  files={files}
-                  onupdatefiles={setFiles}
-                  allowMultiple={true}
-                  server={serverOptions}
-                  name="file"
-                />
-              </div>
-            </div>
-          </Modal.Body>
 
-          <Modal.Footer>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Enregistrement...' : 'Enregistrer'}
-            </Button>
-            <Button onClick={handleClose}>Annuler</Button>
-          </Modal.Footer>
-        </form>
-      </Modal>
-    </div>
-  );
-};
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <FormField
+                    fullWidth
+                    label="Prix"
+                    name="prix"
+                    type="number"
+                    value={produit.prix}
+                    onChange={handleChange}
+                    error={!!formErrors.prix}
+                    helperText={formErrors.prix}
+                    disabled={loading}
+                    required
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">DT</InputAdornment>,
+                    }}
+                  />
 
-export default Insertproduit;
+                  <FormField
+                    fullWidth
+                    label="Quantité en stock"
+                    name="stock"
+                    type="number"
+                    value={produit.stock}
+                    onChange={handleChange}
+                    error={!!formErrors.stock}
+                    helperText={formErrors.stock}
+                    disabled={loading}
+                    required
+                  />
+                </Box>
+
+                <FormSelect fullWidth error={!!formErrors.marqueID}>
+                  <InputLabel id="marque-label">Marque</InputLabel>
+                  <Select
+                    labelId="marque-label"
+                    id="marque"
+                    name="marqueID"
+                    value={produit.marqueID}
+                    onChange={handleChange}
+                    label="Marque"
+                    disabled={loading || loadingData}
+                    required
+                  >
+                    <MenuItem value="">
+                      <em>Sélectionner une marque</em>
+                    </MenuItem>
+                    {marques.map((marq) => (
+                      <MenuItem key={marq._id} value={marq._id}>
+                        {marq.nommarque}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formErrors.marqueID && (
+                    <Typography variant="caption" color="error">
+                      {formErrors.marqueID}
+                    </Typography>
+                  )}
+                </FormSelect>
+
+                <FormSelect fullWidth error={!!formErrors.scategorieID}>
+                  <InputLabel id="category-label">Catégorie</InputLabel>
+                  <Select
+                    labelId="category-label"
+                    id="category"
+                    name="scategorieID"
+                    value={produit.scategorieID}
+                    onChange={handleChange}
+                    label="Catégorie"
+                    disabled={loading || loadingData}
+                    required
+                  >
+                    <MenuItem value="">
+                      <em>Sélectionner une catégorie</em>
+                    </MenuItem>
+                    {scategories.map((scat) => (
+                      <MenuItem key={scat._id} value={scat._id}>
+                        {scat.nomscategorie}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formErrors.scategorieID && (
+                    <Typography variant="caption" color="error">
+                      {formErrors.scategorieID}
+                    </Typography>
+                  )}
+                </FormSelect>
+              </Box>
+
+              <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", md: "block" } }} />
+
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                  Image du produit
+                </Typography>
+
+                <ImageUploadSection>
+                  <FilePond
+                    files={files}
+                    onupdatefiles={setFiles}
+                    allowMultiple={false}
+                    server={serverOptions}
+                    name="file"
+                    labelIdle='Glissez et déposez votre image ou <span class="filepond--label-action">Parcourir</span>'
+                    labelFileProcessing="Téléchargement"
+                    labelFileProcessingComplete="Téléchargement terminé"
+                    labelTapToCancel="Cliquez pour annuler"
+                    labelTapToRetry="Cliquez pour réessayer"
+                    labelFileProcessingError="Erreur lors du téléchargement"
+                  />
+
+                  {produit.imagepro && (
+                    <Box sx={{ mt: 2, textAlign: "center" }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Aperçu de l'image
+                      </Typography>
+                      <Box
+                        component="img"
+                        src={produit.imagepro}
+                        alt="Aperçu du produit"
+                        sx={{
+                          maxWidth: "100%",
+                          maxHeight: "200px",
+                          borderRadius: "8px",
+                          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </Box>
+                  )}
+                </ImageUploadSection>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions
+          sx={{ p: 2, backgroundColor: "#f8f9fa", borderTop: "1px solid #e0e0e0", position: "sticky", bottom: 0 }}
+        >
+          <Button
+            onClick={handleCloseWithFocus}
+            disabled={loading}
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+            }}
+          >
+            Annuler
+          </Button>
+          <SubmitButton
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading || loadingData}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
+          >
+            {loading ? "Enregistrement..." : "Ajouter le produit"}
+          </SubmitButton>
+        </DialogActions>
+      </form>
+    </StyledDialog>
+  )
+}
+
+export default Insertproduit
+

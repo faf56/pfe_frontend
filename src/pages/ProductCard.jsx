@@ -50,13 +50,16 @@ const ProductCard = () => {
         {filteredProduits.length > 0 ? (
           <div className="card-container">
             {filteredProduits.map((pro) => (
-              <Card 
-                key={pro._id}
-                imagepro={pro.imagepro}
-                title={pro.title}
-                marqueID={pro.marqueID}
-                prix={pro.prix}
-              />
+              <Card
+              key={pro._id}
+              _id={pro._id}
+              imagepro={pro.imagepro}
+              title={pro.title}
+              description={pro.description} // Ajoutez cette ligne
+              prix={pro.prix}
+              stock={pro.stock} // Ajoutez cette ligne
+              marqueID={pro.marqueID}
+            />
             ))}
           </div>
         ) : (

@@ -17,11 +17,13 @@ import AppsIcon from '@mui/icons-material/Apps';
 import CategoryIcon from '@mui/icons-material/Category';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useNavigate } from 'react-router-dom';
 import {useAppStore} from './appStore';
 import HomeIcon from '@mui/icons-material/Home';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const drawerWidth = 240;
 
@@ -137,7 +139,7 @@ export default function Sidenav() {
                 />
               </ListItemButton>
             </ListItem>
-            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/products")}}>
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/products")}}>
               <ListItemButton sx={[{minHeight: 48,px: 2.5,},
                   open
                     ? {justifyContent: 'initial',}
@@ -165,7 +167,7 @@ export default function Sidenav() {
                 />
               </ListItemButton>
             </ListItem>
-            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/category")}}>
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/category")}}>
               <ListItemButton sx={[{minHeight: 48,px: 2.5,},
                   open
                     ? {justifyContent: 'initial',}
@@ -193,7 +195,7 @@ export default function Sidenav() {
                 />
               </ListItemButton>
             </ListItem>
-            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/scategory")}}>
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/scategory")}}>
               <ListItemButton sx={[{minHeight: 48,px: 2.5,},
                   open
                     ? {justifyContent: 'initial',}
@@ -221,7 +223,7 @@ export default function Sidenav() {
                 />
               </ListItemButton>
             </ListItem>
-            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/marque")}}>
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/marque")}}>
               <ListItemButton sx={[{minHeight: 48,px: 2.5,},
                   open
                     ? {justifyContent: 'initial',}
@@ -249,7 +251,7 @@ export default function Sidenav() {
                 />
               </ListItemButton>
             </ListItem>
-            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/orders")}}>
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/orders")}}>
               <ListItemButton sx={[{minHeight: 48,px: 2.5,},
                   open
                     ? {justifyContent: 'initial',}
@@ -277,7 +279,7 @@ export default function Sidenav() {
                 />
               </ListItemButton>
             </ListItem>
-            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/users")}}>
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/users")}}>
               <ListItemButton sx={[{minHeight: 48,px: 2.5,},
                   open
                     ? {justifyContent: 'initial',}
@@ -304,7 +306,7 @@ export default function Sidenav() {
                 />
               </ListItemButton>
             </ListItem>
-            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/products")}}>
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/")}}>
               <ListItemButton sx={[{minHeight: 48,px: 2.5,},
                   open
                     ? {justifyContent: 'initial',}
@@ -321,6 +323,64 @@ export default function Sidenav() {
                    <HomeIcon fontSize="large"/>
                 </ListItemIcon>
                 <ListItemText primary="client vue" sx={[
+                    open
+                      ? {
+                          opacity: 1,
+                        }
+                      : {
+                          opacity: 0,
+                        },
+                  ]}
+                />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/livraison")}}>
+              <ListItemButton sx={[{minHeight: 48,px: 2.5,},
+                  open
+                    ? {justifyContent: 'initial',}
+                    : {justifyContent: 'center',},
+                ]}
+              >
+                <ListItemIcon sx={[{ minWidth: 0,justifyContent: 'center',},
+                    open
+                      ? {mr: 3,}
+                      : {mr: 'auto',},
+                  ]}
+                >
+                  
+                   <LocalShippingIcon fontSize="large"/>
+                </ListItemIcon>
+                <ListItemText primary="Livraison" sx={[
+                    open
+                      ? {
+                          opacity: 1,
+                        }
+                      : {
+                          opacity: 0,
+                        },
+                  ]}
+                />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/logout")}}>
+              <ListItemButton sx={[{minHeight: 48,px: 2.5,},
+                  open
+                    ? {justifyContent: 'initial',}
+                    : {justifyContent: 'center',},
+                ]}
+              >
+                <ListItemIcon sx={[{ minWidth: 0,justifyContent: 'center',},
+                    open
+                      ? {mr: 3,}
+                      : {mr: 'auto',},
+                  ]}
+                >
+                  
+                   <LogoutIcon fontSize="large"/>
+                </ListItemIcon>
+                <ListItemText primary="Logout" sx={[
                     open
                       ? {
                           opacity: 1,

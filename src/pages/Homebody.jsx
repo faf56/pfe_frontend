@@ -29,7 +29,7 @@ const Homebody = () => {
       return result;
     };
   
-    const productChunks = chunkArray(produits, 4);
+    const productChunks = chunkArray(produits, 5);
   return (
     <>
     <div>
@@ -104,12 +104,15 @@ const Homebody = () => {
               <Row className="card-container display-center ">
                 {chunk.map((pro, idx) => (
                   <Col key={idx} >
-                    <Card 
-                    key={index}
-                    imagepro={pro.imagepro}
-                    title={pro.title}
-                    marqueID={pro.marqueID}
-                    prix={pro.prix}
+                    <Card
+                      key={pro._id}
+                      _id={pro._id}
+                      imagepro={pro.imagepro}
+                      title={pro.title}
+                      description={pro.description} // Ajoutez cette ligne
+                      prix={pro.prix}
+                      stock={pro.stock} // Ajoutez cette ligne
+                      marqueID={pro.marqueID}
                     />
                   </Col>
                 ))}

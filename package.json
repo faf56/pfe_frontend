@@ -20,7 +20,7 @@
     "@mui/styled-engine-sc": "^6.4.6",
     "@mui/x-date-pickers": "^7.27.3",
     "@toolpad/core": "^0.12.1",
-    "axios": "^1.8.2",
+    "axios": "^1.8.4",
     "bootstrap": "^5.3.3",
     "filepond": "^4.32.7",
     "filepond-plugin-image-exif-orientation": "^1.0.11",
@@ -34,6 +34,7 @@
     "react-icons": "^5.5.0",
     "react-mui-sidebar": "^1.6.3",
     "react-router-dom": "^7.3.0",
+    "react-use-cart": "^1.14.0",
     "styled-components": "^6.1.15",
     "use-shopping-cart": "^3.2.0",
     "zustand": "^5.0.3"

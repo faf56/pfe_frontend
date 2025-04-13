@@ -104,12 +104,12 @@ const Register = () => {
                required />
             <FaLock className='icon' />
           </div>
-          <div className="remember-forgot">
+          {/*<div className="remember-forgot">
             <label><input type="checkbox" /> I agree to the terms & conditions</label>
-          </div>
+          </div> */}
           <button type='submit'>Register</button>
           <div className="register-link">
-            <p>Already have an account? <Link to="/login">Login</Link></p>
+            <p>Vous avez déjà un compte ?<Link to="/login"> Connectez-vous !</Link></p>
           </div>
         </form>
       </div>
