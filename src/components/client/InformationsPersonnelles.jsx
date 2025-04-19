@@ -1,7 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { Box, TextField, Button, Grid, Typography, Alert, CircularProgress, Avatar, Divider } from "@mui/material"
+import {
+  Box,
+  TextField,
+  Button,
+  Grid,
+  Typography,
+  Alert,
+  CircularProgress,
+  Avatar,
+  Divider,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+} from "@mui/material"
 import { PhotoCamera } from "@mui/icons-material"
 import { updateUser } from "../../service/userservice"
 
@@ -11,6 +26,8 @@ const InformationsPersonnelles = ({ user, setUser }) => {
     lastname: user?.lastname || "",
     email: user?.email || "",
     telephone: user?.telephone || "",
+    userVille: user?.userVille || "",
+    sexe: user?.sexe || "",
     password: "",
     confirmPassword: "",
   })
@@ -116,6 +133,8 @@ const InformationsPersonnelles = ({ user, setUser }) => {
         lastname: formData.lastname,
         email: formData.email,
         telephone: formData.telephone,
+        userVille: formData.userVille,
+        sexe: formData.sexe,
       }
 
       // Ajouter le mot de passe seulement s'il est fourni
@@ -228,6 +247,54 @@ const InformationsPersonnelles = ({ user, setUser }) => {
             onChange={handleChange}
             placeholder="8 chiffres"
           />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            select
+            fullWidth
+            label="Ville"
+            name="userVille"
+            value={formData.userVille || ""}
+            onChange={handleChange}
+            SelectProps={{
+              native: true,
+            }}
+          >
+            <option value=""></option>
+            <option value="Tunis">Tunis</option>
+            <option value="Sfax">Sfax</option>
+            <option value="Sousse">Sousse</option>
+            <option value="Kairouan">Kairouan</option>
+            <option value="Bizerte">Bizerte</option>
+            <option value="Gabès">Gabès</option>
+            <option value="Ariana">Ariana</option>
+            <option value="Gafsa">Gafsa</option>
+            <option value="Monastir">Monastir</option>
+            <option value="Ben Arous">Ben Arous</option>
+            <option value="Kasserine">Kasserine</option>
+            <option value="Médenine">Médenine</option>
+            <option value="Nabeul">Nabeul</option>
+            <option value="Tataouine">Tataouine</option>
+            <option value="Béja">Béja</option>
+            <option value="Jendouba">Jendouba</option>
+            <option value="El Kef">El Kef</option>
+            <option value="Mahdia">Mahdia</option>
+            <option value="Sidi Bouzid">Sidi Bouzid</option>
+            <option value="Tozeur">Tozeur</option>
+            <option value="Siliana">Siliana</option>
+            <option value="Kébili">Kébili</option>
+            <option value="Zaghouan">Zaghouan</option>
+            <option value="Manouba">Manouba</option>
+          </TextField>
+        </Grid>
+        <Grid item xs={12}>
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Sexe</FormLabel>
+            <RadioGroup row name="sexe" value={formData.sexe || ""} onChange={handleChange}>
+              <FormControlLabel value="homme" control={<Radio />} label="Homme" />
+              <FormControlLabel value="femme" control={<Radio />} label="Femme" />
+            </RadioGroup>
+          </FormControl>
         </Grid>
       </Grid>
 

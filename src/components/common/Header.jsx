@@ -10,9 +10,11 @@ import { styled } from "@mui/material/styles"
 import IconButton from "@mui/material/IconButton"
 import Badge from "@mui/material/Badge"
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCartOutlined"
+import EmailIcon from '@mui/icons-material/Email';
 import CartDrawer from "../cart/CartDrawer"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useShoppingCart } from "use-shopping-cart"
+import { fetchcategories } from "../../service/categorieservice"
 
 const CartBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -28,12 +30,38 @@ const Header = () => {
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [categories, setCategories] = useState([])
 
   const toggleCartDrawer = () => {
     setDrawerOpen(!drawerOpen)
   }
 
   const { cartCount } = useShoppingCart()
+
+  // Charger les catégories au chargement du composant
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await fetchcategories()
+        setCategories(response.data)
+      } catch (error) {
+        console.error("Erreur lors du chargement des catégories:", error)
+      }
+    }
+
+    loadCategories()
+  }, [])
+
+  // Fonction pour filtrer par catégorie
+  const handleCategoryClick = (categoryId, categoryName) => {
+    navigate("/product", {
+      state: {
+        filter: "category",
+        id: categoryId,
+        value: categoryName,
+      },
+    })
+  }
 
   // Fonction pour filtrer par sous-catégorie
   const handleSubcategoryClick = (subcategoryName) => {
@@ -67,6 +95,11 @@ const Header = () => {
         </span>
         <span className="center">
           <i className="fa-solid fa-truck-fast"></i> Livraison gratuite à partir de 99 DT d'achat
+        </span>
+        <span className="right" onClick={() => navigate("/contact")} >
+          
+          <EmailIcon/> CONTACT
+          
         </span>
       </div>
 
@@ -105,11 +138,9 @@ const Header = () => {
             />
           </div>
           <i className="fa-regular fa-heart fa-xl"></i>
-          
+
           <IconButton onClick={toggleCartDrawer} aria-label="Panier">
-          
             <ShoppingCartIcon fontSize="large" sx={{ color: "black" }} />
-            
             <CartBadge badgeContent={cartCount} overlap="circular" />
           </IconButton>
         </div>
@@ -120,10 +151,23 @@ const Header = () => {
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-center">
           <Nav className="navbar-nav">
             <Nav.Link href="/">Acceuil</Nav.Link>
-            <Nav.Link href="/allproduct">Product</Nav.Link>
+            {/*<Nav.Link href="/allproduct">Product</Nav.Link>*/}
+            <Nav.Link href="/promo">Promo</Nav.Link>
 
             {/* Menu Teint */}
-            <NavDropdown title="Teint" id="nav-dropdown-teint">
+            <NavDropdown
+              title="Teint"
+              id="nav-dropdown-teint"
+              onClick={(e) => {
+                if (e.target.id === "nav-dropdown-teint") {
+                  // Trouver l'ID de la catégorie Teint
+                  const teintCategory = categories.find((cat) => cat.nomcategorie === "Teint")
+                  if (teintCategory) {
+                    handleCategoryClick(teintCategory._id, "Teint")
+                  }
+                }
+              }}
+            >
               <NavDropdown.Item onClick={() => handleSubcategoryClick("Fond de teint")}>Fond de teint</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("Blush & Highlighter")}>
                 Blush & Highlighter
@@ -133,13 +177,35 @@ const Header = () => {
               </NavDropdown.Item>
             </NavDropdown>
 
-            <NavDropdown title="Yeux" id="nav-dropdown-yeux">
+            <NavDropdown
+              title="Yeux"
+              id="nav-dropdown-yeux"
+              onClick={(e) => {
+                if (e.target.id === "nav-dropdown-yeux") {
+                  const yeuxCategory = categories.find((cat) => cat.nomcategorie === "Yeux")
+                  if (yeuxCategory) {
+                    handleCategoryClick(yeuxCategory._id, "Yeux")
+                  }
+                }
+              }}
+            >
               <NavDropdown.Item onClick={() => handleSubcategoryClick("Mascara")}>Mascaras</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("Palettes")}>Palettes</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("Crayons yeux")}>Crayons</NavDropdown.Item>
             </NavDropdown>
 
-            <NavDropdown title="Lèvres" id="nav-dropdown-levres">
+            <NavDropdown
+              title="Lèvres"
+              id="nav-dropdown-levres"
+              onClick={(e) => {
+                if (e.target.id === "nav-dropdown-levres") {
+                  const levresCategory = categories.find((cat) => cat.nomcategorie === "Lèvres")
+                  if (levresCategory) {
+                    handleCategoryClick(levresCategory._id, "Lèvres")
+                  }
+                }
+              }}
+            >
               <NavDropdown.Item onClick={() => handleSubcategoryClick("rouge à levres")}>
                 Rouges à lèvres
               </NavDropdown.Item>
@@ -149,7 +215,18 @@ const Header = () => {
               </NavDropdown.Item>
             </NavDropdown>
 
-            <NavDropdown title="Ongles" id="nav-dropdown-ongles">
+            <NavDropdown
+              title="Ongles"
+              id="nav-dropdown-ongles"
+              onClick={(e) => {
+                if (e.target.id === "nav-dropdown-ongles") {
+                  const onglesCategory = categories.find((cat) => cat.nomcategorie === "Ongles")
+                  if (onglesCategory) {
+                    handleCategoryClick(onglesCategory._id, "Ongles")
+                  }
+                }
+              }}
+            >
               <NavDropdown.Item onClick={() => handleSubcategoryClick("verni normal")}>Verni normal</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("verni permenent")}>
                 Verni permanent
@@ -159,7 +236,18 @@ const Header = () => {
               </NavDropdown.Item>
             </NavDropdown>
 
-            <NavDropdown title="Cheveux" id="nav-dropdown-cheveux">
+            <NavDropdown
+              title="Cheveux"
+              id="nav-dropdown-cheveux"
+              onClick={(e) => {
+                if (e.target.id === "nav-dropdown-cheveux") {
+                  const cheveuxCategory = categories.find((cat) => cat.nomcategorie === "Cheveux")
+                  if (cheveuxCategory) {
+                    handleCategoryClick(cheveuxCategory._id, "Cheveux")
+                  }
+                }
+              }}
+            >
               <NavDropdown.Item onClick={() => handleSubcategoryClick("shampoing")}>Shampoing</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("soin cheveux")}>Soin cheveux</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("accesoires cheveux")}>
@@ -167,14 +255,25 @@ const Header = () => {
               </NavDropdown.Item>
             </NavDropdown>
 
-            <NavDropdown title="Soin" id="nav-dropdown-soin">
+            <NavDropdown
+              title="Soin"
+              id="nav-dropdown-soin"
+              onClick={(e) => {
+                if (e.target.id === "nav-dropdown-soin") {
+                  const soinCategory = categories.find((cat) => cat.nomcategorie === "Soin")
+                  if (soinCategory) {
+                    handleCategoryClick(soinCategory._id, "Soin")
+                  }
+                }
+              }}
+            >
               <NavDropdown.Item onClick={() => handleSubcategoryClick("soin visage")}>Soin visage</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("soin corps")}>Soin corps</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("parfum & brume")}>
                 Parfum & brume
               </NavDropdown.Item>
             </NavDropdown>
-            <Nav.Link href="#">Marques</Nav.Link>
+            <Nav.Link href="/marques">Marques</Nav.Link>
           </Nav>
         </Navbar.Collapse>
       </Navbar>
@@ -185,4 +284,3 @@ const Header = () => {
 }
 
 export default Header
-

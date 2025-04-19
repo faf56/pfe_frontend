@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import {useAppStore} from './appStore';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
+import EmailIcon from '@mui/icons-material/Email';
 
 const drawerWidth = 240;
 
@@ -381,6 +382,35 @@ export default function Sidenav() {
                    <LogoutIcon fontSize="large"/>
                 </ListItemIcon>
                 <ListItemText primary="Logout" sx={[
+                    open
+                      ? {
+                          opacity: 1,
+                        }
+                      : {
+                          opacity: 0,
+                        },
+                  ]}
+                />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem  disablePadding sx={{ display: 'block' }} onClick={()=>{navigate("/admin/contact")}}>
+              <ListItemButton sx={[{minHeight: 48,px: 2.5,},
+                  open
+                    ? {justifyContent: 'initial',}
+                    : {justifyContent: 'center',},
+                ]}
+              >
+                <ListItemIcon sx={[{ minWidth: 0,justifyContent: 'center',},
+                    open
+                      ? {mr: 3,}
+                      : {mr: 'auto',},
+                  ]}
+                >
+                  
+                   <EmailIcon fontSize="large"/>
+                </ListItemIcon>
+                <ListItemText primary="Contact" sx={[
                     open
                       ? {
                           opacity: 1,

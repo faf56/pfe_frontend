@@ -1,10 +1,12 @@
+"use client"
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useShoppingCart } from "use-shopping-cart"
 import { fetchproduitById } from "../service/produitservice"
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import CancelIcon from "@mui/icons-material/Cancel"
+import LocalOfferIcon from "@mui/icons-material/LocalOffer"
 
 // Material UI imports
 import {
@@ -24,6 +26,7 @@ import {
   Snackbar,
   Tabs,
   Tab,
+  Chip,
 } from "@mui/material"
 
 // Icons
@@ -118,6 +121,17 @@ const ProductDetail = () => {
     }
   }
 
+  // Vérifier si le produit a un prix promotionnel
+  const hasPromo =
+    product &&
+    product.prixPromo !== null &&
+    product.prixPromo !== undefined &&
+    product.prixPromo > 0 &&
+    product.prixPromo < product.prix
+
+  // Déterminer le prix final à utiliser
+  const finalPrice = hasPromo ? product?.prixPromo : product?.prix
+
   // Ajouter au panier
   const handleAddToCart = () => {
     if (!product) return
@@ -125,7 +139,10 @@ const ProductDetail = () => {
     const cartItem = {
       id: product._id,
       title: product.title,
-      prix: Number(product.prix),
+      prix: Number(finalPrice), // Utiliser le prix promotionnel si disponible
+      prixOriginal: Number(product.prix), // Garder le prix original pour référence
+      prixPromo: hasPromo ? Number(product.prixPromo) : null,
+      hasPromo: hasPromo,
       image: product.imagepro,
       quantity: quantity,
       marque: product.marqueID?.nommarque,
@@ -146,6 +163,12 @@ const ProductDetail = () => {
     setSnackbarOpen(false)
   }
 
+  // Calculer le pourcentage de réduction
+  const calculateDiscount = () => {
+    if (!hasPromo) return 0
+    return Math.round(((product.prix - product.prixPromo) / product.prix) * 100)
+  }
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mb: 3 }}>
@@ -157,7 +180,7 @@ const ProductDetail = () => {
         <Link underline="hover" color="inherit" href="/">
           Accueil
         </Link>
-        {product?.scategorieID?.nomscategorie  && (
+        {product?.scategorieID?.nomscategorie && (
           <Link underline="hover" color="inherit" href={`/categories/${product.scategorieID._id}`}>
             {product.scategorieID.nomscategorie}
           </Link>
@@ -195,8 +218,23 @@ const ProductDetail = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  position: "relative",
                 }}
               >
+                {hasPromo && (
+                  <Chip
+                    label={`-${calculateDiscount()}%`}
+                    color="error"
+                    size="small"
+                    icon={<LocalOfferIcon />}
+                    sx={{
+                      position: "absolute",
+                      top: 16,
+                      left: 16,
+                      fontWeight: "bold",
+                    }}
+                  />
+                )}
                 <img
                   src={product.imagepro || "/placeholder.svg"}
                   alt={product.title}
@@ -228,9 +266,26 @@ const ProductDetail = () => {
                   </Typography>
                 </Box>
 
-                <Typography variant="h5" color="primary" sx={{ fontWeight: "bold", my: 2 }}>
-                  {Number(product.prix).toFixed(3)} TND
-                </Typography>
+                {/* Affichage du prix avec promotion si disponible */}
+                {hasPromo ? (
+                  <Box sx={{ my: 2 }}>
+                    <Typography
+                      variant="h5"
+                      color="error"
+                      sx={{ fontWeight: "bold", display: "flex", alignItems: "center" }}
+                    >
+                      {Number(product.prixPromo).toFixed(3)} TND
+                      <Chip label={`-${calculateDiscount()}%`} size="small" color="error" sx={{ ml: 2 }} />
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ textDecoration: "line-through", mt: 0.5 }}>
+                      Prix normal: {Number(product.prix).toFixed(3)} TND
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography variant="h5" color="primary" sx={{ fontWeight: "bold", my: 2 }}>
+                    {Number(product.prix).toFixed(3)} TND
+                  </Typography>
+                )}
 
                 <Divider sx={{ my: 2 }} />
 
@@ -239,31 +294,31 @@ const ProductDetail = () => {
                 </Typography>
 
                 <Box
-  sx={{
-    display: "flex",
-    alignItems: "center",
-    bgcolor: product.stock > 0 ? "#e8f5e9" : "#ffebee",
-    p: 1,
-    borderRadius: 1,
-    mb: 3,
-  }}
->
-  {product.stock > 0 ? (
-    <>
-      <CheckCircleIcon fontSize="small" color="success" sx={{ mr: 1 }} />
-      <Typography variant="body2" color="success.main">
-        En stock
-      </Typography>
-    </>
-  ) : (
-    <>
-      <CancelIcon fontSize="small" color="error" sx={{ mr: 1 }} />
-      <Typography variant="body2" color="error.main">
-        Rupture de stock
-      </Typography>
-    </>
-  )}
-</Box>
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    bgcolor: product.stock > 0 ? "#e8f5e9" : "#ffebee",
+                    p: 1,
+                    borderRadius: 1,
+                    mb: 3,
+                  }}
+                >
+                  {product.stock > 0 ? (
+                    <>
+                      <CheckCircleIcon fontSize="small" color="success" sx={{ mr: 1 }} />
+                      <Typography variant="body2" color="success.main">
+                        En stock
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <CancelIcon fontSize="small" color="error" sx={{ mr: 1 }} />
+                      <Typography variant="body2" color="error.main">
+                        Rupture de stock
+                      </Typography>
+                    </>
+                  )}
+                </Box>
 
                 {product.stock > 0 && (
                   <Box sx={{ mb: 3 }}>
@@ -271,11 +326,7 @@ const ProductDetail = () => {
                       Quantité
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <IconButton
-                        size="small"
-                        onClick={decrementQuantity}
-                        disabled={quantity <= 1}
-                      >
+                      <IconButton size="small" onClick={decrementQuantity} disabled={quantity <= 1}>
                         <RemoveIcon />
                       </IconButton>
 
@@ -292,11 +343,7 @@ const ProductDetail = () => {
                         sx={{ mx: 1 }}
                       />
 
-                      <IconButton
-                        size="small"
-                        onClick={incrementQuantity}
-                        disabled={quantity >= product.stock}
-                      >
+                      <IconButton size="small" onClick={incrementQuantity} disabled={quantity >= product.stock}>
                         <AddIcon />
                       </IconButton>
                     </Box>
@@ -378,21 +425,45 @@ const ProductDetail = () => {
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-  <Typography variant="subtitle1" fontWeight="bold">
-    Stock
-  </Typography>
-  {product.stock > 0 ? (
-    <Typography variant="body1" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
-      <CheckCircleIcon fontSize="small" color="success" sx={{ mr: 1 }} />
-      En stock
-    </Typography>
-  ) : (
-    <Typography variant="body1" color="error.main" sx={{ display: 'flex', alignItems: 'center' }}>
-      <CancelIcon fontSize="small" color="error" sx={{ mr: 1 }} />
-      Rupture de stock
-    </Typography>
-  )}
-</Grid>
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      Stock
+                    </Typography>
+                    {product.stock > 0 ? (
+                      <Typography variant="body1" color="success.main" sx={{ display: "flex", alignItems: "center" }}>
+                        <CheckCircleIcon fontSize="small" color="success" sx={{ mr: 1 }} />
+                        En stock
+                      </Typography>
+                    ) : (
+                      <Typography variant="body1" color="error.main" sx={{ display: "flex", alignItems: "center" }}>
+                        <CancelIcon fontSize="small" color="error" sx={{ mr: 1 }} />
+                        Rupture de stock
+                      </Typography>
+                    )}
+                  </Grid>
+
+                  {/* Afficher les informations de prix */}
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 1 }} />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      Prix
+                    </Typography>
+                    <Typography variant="body1">{Number(product.prix).toFixed(3)} TND</Typography>
+                  </Grid>
+
+                  {hasPromo && (
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        Prix promotionnel
+                      </Typography>
+                      <Typography variant="body1" color="error.main" sx={{ display: "flex", alignItems: "center" }}>
+                        <LocalOfferIcon fontSize="small" color="error" sx={{ mr: 1 }} />
+                        {Number(product.prixPromo).toFixed(3)} TND (-{calculateDiscount()}%)
+                      </Typography>
+                    </Grid>
+                  )}
                 </Grid>
               </TabPanel>
 
@@ -421,4 +492,3 @@ const ProductDetail = () => {
 }
 
 export default ProductDetail
-

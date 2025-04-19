@@ -1,3 +1,4 @@
+"use client"
 
 import { useState } from "react"
 import {
@@ -19,7 +20,16 @@ import {
   TableRow,
   TablePagination,
 } from "@mui/material"
-import { PersonOutline, AdminPanelSettings, CheckCircleOutline, CancelOutlined, Edit } from "@mui/icons-material"
+import {
+  PersonOutline,
+  AdminPanelSettings,
+  CheckCircleOutline,
+  CancelOutlined,
+  Edit,
+  LocationOn,
+  Male,
+  Female,
+} from "@mui/icons-material"
 import { toggleUserStatus, updateUserRole } from "../../service/userservice"
 import EditUser from "./EditUser"
 
@@ -72,19 +82,19 @@ const StatusSwitch = styled(Switch)(({ theme }) => ({
 }))
 
 const RoleButton = styled(MuiButton, {
-    shouldForwardProp: (prop) => prop !== '$isAdmin', // Explicitly prevent $isAdmin from reaching DOM
-  })(({ $isAdmin }) => ({
-    borderRadius: "8px",
-    textTransform: "none",
-    fontWeight: 500,
-    padding: "6px 16px",
-    backgroundColor: $isAdmin ? "#e3f2fd" : "#f5f5f5",
-    color: $isAdmin ? "#1976d2" : "#616161",
-    border: $isAdmin ? "1px solid #bbdefb" : "1px solid #e0e0e0",
-    "&:hover": {
-      backgroundColor: $isAdmin ? "#bbdefb" : "#e0e0e0",
-    },
-  }));
+  shouldForwardProp: (prop) => prop !== "$isAdmin", // Explicitly prevent $isAdmin from reaching DOM
+})(({ $isAdmin }) => ({
+  borderRadius: "8px",
+  textTransform: "none",
+  fontWeight: 500,
+  padding: "6px 16px",
+  backgroundColor: $isAdmin ? "#e3f2fd" : "#f5f5f5",
+  color: $isAdmin ? "#1976d2" : "#616161",
+  border: $isAdmin ? "1px solid #bbdefb" : "1px solid #e0e0e0",
+  "&:hover": {
+    backgroundColor: $isAdmin ? "#bbdefb" : "#e0e0e0",
+  },
+}))
 
 const AfficheUsers = ({ users, handleUpdateUser }) => {
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -124,6 +134,8 @@ const AfficheUsers = ({ users, handleUpdateUser }) => {
               <StyledTableHeadRow>
                 <TableCell>Utilisateur</TableCell>
                 <TableCell>Téléphone</TableCell>
+                <TableCell>Ville</TableCell>
+                <TableCell>Sexe</TableCell>
                 <TableCell>Statut</TableCell>
                 <TableCell>Rôle</TableCell>
                 <TableCell>Actions</TableCell>
@@ -160,6 +172,43 @@ const AfficheUsers = ({ users, handleUpdateUser }) => {
                     <Typography variant="body2">{user.telephone || "Non défini"}</Typography>
                   </TableCell>
                   <TableCell>
+                    {user.userVille ? (
+                      <Chip
+                        icon={<LocationOn fontSize="small" />}
+                        label={user.userVille}
+                        size="small"
+                        variant="outlined"
+                        sx={{ borderRadius: "6px" }}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Non défini
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {user.sexe ? (
+                      <Chip
+                        icon={user.sexe === "homme" ? <Male fontSize="small" /> : <Female fontSize="small" />}
+                        label={user.sexe === "homme" ? "Homme" : "Femme"}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          borderRadius: "6px",
+                          color: user.sexe === "homme" ? "#1976d2" : "#e91e63",
+                          borderColor: user.sexe === "homme" ? "#1976d2" : "#e91e63",
+                          "& .MuiChip-icon": {
+                            color: "inherit",
+                          },
+                        }}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Non défini
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <StatusSwitch
                         checked={user.isActive}
@@ -193,21 +242,21 @@ const AfficheUsers = ({ users, handleUpdateUser }) => {
                     </Box>
                   </TableCell>
                   <TableCell>
-                  <RoleButton
-                    $isAdmin={user.role === "admin"}
-                    onClick={async () => {
+                    <RoleButton
+                      $isAdmin={user.role === "admin"}
+                      onClick={async () => {
                         try {
-                        const newRole = user.role === "admin" ? "user" : "admin";
-                        const res = await updateUserRole(user._id, newRole);
-                        handleUpdateUser({ ...user, role: newRole });
+                          const newRole = user.role === "admin" ? "user" : "admin"
+                          const res = await updateUserRole(user._id, newRole)
+                          handleUpdateUser({ ...user, role: newRole })
                         } catch (error) {
-                        console.error("Erreur lors du changement de rôle:", error);
+                          console.error("Erreur lors du changement de rôle:", error)
                         }
-                    }}
-                    startIcon={user.role === "admin" ? <AdminPanelSettings /> : <PersonOutline />}
-                    size="small"
+                      }}
+                      startIcon={user.role === "admin" ? <AdminPanelSettings /> : <PersonOutline />}
+                      size="small"
                     >
-                    {user.role === "admin" ? "Administrateur" : "Client"}
+                      {user.role === "admin" ? "Administrateur" : "Client"}
                     </RoleButton>
                   </TableCell>
                   <TableCell>
@@ -228,7 +277,7 @@ const AfficheUsers = ({ users, handleUpdateUser }) => {
               ))}
               {emptyRows > 0 && (
                 <StyledTableRow style={{ height: 73 * emptyRows }}>
-                  <TableCell colSpan={5} />
+                  <TableCell colSpan={7} />
                 </StyledTableRow>
               )}
             </TableBody>
@@ -260,4 +309,3 @@ const AfficheUsers = ({ users, handleUpdateUser }) => {
 }
 
 export default AfficheUsers
-

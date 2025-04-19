@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import Affichemarque from "./Affichemarque"
 import { CircularProgress, Box, Typography, Paper, Button, styled } from "@mui/material"

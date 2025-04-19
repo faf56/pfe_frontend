@@ -27,14 +27,19 @@ import {
   Alert,
   CircularProgress,
   Snackbar,
+  Chip,
 } from "@mui/material"
 
 // Icons
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import LocalShippingIcon from "@mui/icons-material/LocalShipping"
 
 // Étapes du processus de commande
 const steps = ["Informations de livraison", "Méthode de livraison", "Paiement", "Confirmation"]
+
+// Seuil pour la livraison gratuite
+const FREE_SHIPPING_THRESHOLD = 99
 
 const Checkout = () => {
   const navigate = useNavigate()
@@ -56,6 +61,7 @@ const Checkout = () => {
   const [shippingMethods, setShippingMethods] = useState([])
   const [selectedShippingMethod, setSelectedShippingMethod] = useState("")
   const [shippingFrais, setShippingFrais] = useState(0)
+  const [originalShippingFrais, setOriginalShippingFrais] = useState(0) // Pour stocker le prix original
   const [paymentMethod, setPaymentMethod] = useState("cash")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -96,8 +102,15 @@ const Checkout = () => {
   // Stocker le sous-total dans une variable
   const subtotal = calculateSubtotal()
 
+  // Vérifier si la livraison est gratuite
+  const isShippingFree = subtotal >= FREE_SHIPPING_THRESHOLD
+
   // Calculer le total (sous-total + frais de livraison)
   const calculateTotal = () => {
+    // Si le sous-total est supérieur ou égal à 99 dinars, la livraison est gratuite
+    if (isShippingFree) {
+      return subtotal
+    }
     return subtotal + (shippingFrais || 0)
   }
 
@@ -110,7 +123,10 @@ const Checkout = () => {
         setShippingMethods(response.data)
         if (response.data.length > 0) {
           setSelectedShippingMethod(response.data[0]._id)
-          setShippingFrais(response.data[0].frais || 0)
+          const initialFrais = response.data[0].frais || 0
+          setOriginalShippingFrais(initialFrais)
+          // Appliquer la livraison gratuite si le sous-total est >= 99 dinars
+          setShippingFrais(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : initialFrais)
         }
       } catch (err) {
         console.error("Erreur lors du chargement des méthodes de livraison:", err)
@@ -121,7 +137,7 @@ const Checkout = () => {
     }
 
     getShippingMethods()
-  }, [])
+  }, [subtotal])
 
   // Vérifier si le panier est vide
   useEffect(() => {
@@ -148,7 +164,10 @@ const Checkout = () => {
     // Mettre à jour les frais de livraison
     const selectedMethod = shippingMethods.find((method) => method._id === methodId)
     if (selectedMethod) {
-      setShippingFrais(selectedMethod.frais || 0)
+      const methodFrais = selectedMethod.frais || 0
+      setOriginalShippingFrais(methodFrais)
+      // Appliquer la livraison gratuite si le sous-total est >= 99 dinars
+      setShippingFrais(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : methodFrais)
     }
   }
 
@@ -244,7 +263,7 @@ const Checkout = () => {
       const produits = cartItems.map((item) => ({
         produitID: item.id,
         quantite: item.quantity,
-        // Prix will be calculated on the server
+        // Prix will be calculated on the server based on whether there's a promo price
       }))
 
       // Trouver la méthode de livraison sélectionnée
@@ -263,6 +282,8 @@ const Checkout = () => {
           codePostal: shippingInfo.codePostal,
           telephone: shippingInfo.telephone,
         },
+        // Ajouter un champ pour indiquer si la livraison est gratuite
+        livraisonGratuite: isShippingFree,
       }
 
       // Ajouter un log pour déboguer
@@ -397,53 +418,100 @@ const Checkout = () => {
         )
       case 1:
         return (
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Méthode de livraison</FormLabel>
-            <RadioGroup
-              aria-label="shipping-method"
-              name="shipping-method"
-              value={selectedShippingMethod}
-              onChange={handleShippingMethodChange}
-            >
-              {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-                  <CircularProgress />
-                </Box>
-              ) : shippingMethods.length === 0 ? (
-                <Alert severity="warning" sx={{ mt: 2 }}>
-                  Aucune méthode de livraison disponible
-                </Alert>
-              ) : (
-                shippingMethods.map((method) => (
-                  <Paper
-                    key={method._id}
-                    sx={{
-                      p: 2,
-                      mb: 2,
-                      border: selectedShippingMethod === method._id ? "2px solid #1976d2" : "1px solid #e0e0e0",
-                      borderRadius: 1,
-                    }}
-                  >
-                    <FormControlLabel
-                      value={method._id}
-                      control={<Radio />}
-                      label={
-                        <Box>
-                          <Typography variant="subtitle1">{method.titre}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {method.description}
-                          </Typography>
-                          <Typography variant="subtitle2" color="primary" sx={{ mt: 1 }}>
-                            {formatPrice(method.frais)} TND
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </Paper>
-                ))
-              )}
-            </RadioGroup>
-          </FormControl>
+          <>
+            {/* Alerte de livraison gratuite */}
+            {isShippingFree && (
+              <Alert
+                icon={<LocalShippingIcon />}
+                severity="success"
+                sx={{ mb: 3, backgroundColor: "rgba(76, 175, 80, 0.1)", color: "#2e7d32" }}
+              >
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Félicitations ! Vous bénéficiez de la livraison gratuite
+                </Typography>
+                <Typography variant="body2">
+                  Votre commande dépasse {FREE_SHIPPING_THRESHOLD} dinars, la livraison est offerte !
+                </Typography>
+              </Alert>
+            )}
+
+            <FormControl component="fieldset">
+              <FormLabel component="legend">Méthode de livraison</FormLabel>
+              <RadioGroup
+                aria-label="shipping-method"
+                name="shipping-method"
+                value={selectedShippingMethod}
+                onChange={handleShippingMethodChange}
+              >
+                {loading ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : shippingMethods.length === 0 ? (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    Aucune méthode de livraison disponible
+                  </Alert>
+                ) : (
+                  shippingMethods.map((method) => (
+                    <Paper
+                      key={method._id}
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        border: selectedShippingMethod === method._id ? "2px solid #1976d2" : "1px solid #e0e0e0",
+                        borderRadius: 1,
+                      }}
+                    >
+                      <FormControlLabel
+                        value={method._id}
+                        control={<Radio />}
+                        label={
+                          <Box>
+                            <Typography variant="subtitle1">{method.titre}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {method.description}
+                            </Typography>
+                            <Box sx={{ mt: 1, display: "flex", alignItems: "center" }}>
+                              {isShippingFree ? (
+                                <>
+                                  <Typography
+                                    variant="subtitle2"
+                                    color="success.main"
+                                    sx={{ fontWeight: "bold", mr: 1 }}
+                                  >
+                                    GRATUIT
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ textDecoration: "line-through", color: "text.secondary" }}
+                                  >
+                                    {formatPrice(method.frais)} TND
+                                  </Typography>
+                                </>
+                              ) : (
+                                <Typography variant="subtitle2" color="primary">
+                                  {formatPrice(method.frais)} TND
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        }
+                      />
+                    </Paper>
+                  ))
+                )}
+              </RadioGroup>
+            </FormControl>
+
+            {!isShippingFree && (
+              <Alert severity="info" sx={{ mt: 3, backgroundColor: "rgba(25, 118, 210, 0.1)", color: "#1976d2" }}>
+                <Typography variant="body2">
+                  Ajoutez {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} TND supplémentaires à votre panier pour
+                  bénéficier de la livraison gratuite !
+                </Typography>
+              </Alert>
+            )}
+          </>
         )
       case 2:
         return (
@@ -601,8 +669,22 @@ const Checkout = () => {
                     <Typography variant="body2" color="text.secondary">
                       Quantité: {item.quantity}
                     </Typography>
-                    <Typography variant="body2">
-                      {formatPrice((item.prix || item.price) * item.quantity)} TND
+                    {item.hasPromo ? (
+                      <Box>
+                        <Typography variant="body2" color="error">
+                          {formatPrice(item.prix)} TND
+                        </Typography>
+                        <Typography variant="caption" sx={{ textDecoration: "line-through", color: "text.secondary" }}>
+                          {formatPrice(item.prixOriginal)} TND
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2">{formatPrice(item.prix)} TND</Typography>
+                    )}
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" fontWeight="bold">
+                      {formatPrice(item.prix * item.quantity)} TND
                     </Typography>
                   </Box>
                 </Box>
@@ -617,12 +699,33 @@ const Checkout = () => {
               </Box>
 
               {/* Frais de livraison */}
-              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, alignItems: "center" }}>
                 <Typography>Frais de livraison:</Typography>
-                <Typography>
-                  {activeStep >= 1 && selectedShippingMethod ? `${formatPrice(shippingFrais)} TND` : "À calculer"}
-                </Typography>
+                {activeStep >= 1 && selectedShippingMethod ? (
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    {isShippingFree ? (
+                      <>
+                        <Chip label="GRATUIT" size="small" color="success" sx={{ mr: 1, fontWeight: "bold" }} />
+                        <Typography variant="body2" sx={{ textDecoration: "line-through", color: "text.secondary" }}>
+                          {formatPrice(originalShippingFrais)} TND
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography>{formatPrice(shippingFrais)} TND</Typography>
+                    )}
+                  </Box>
+                ) : (
+                  <Typography>À calculer</Typography>
+                )}
               </Box>
+
+              {isShippingFree && (
+                <Box sx={{ backgroundColor: "rgba(76, 175, 80, 0.1)", p: 1, borderRadius: 1, mb: 2 }}>
+                  <Typography variant="body2" color="success.main" align="center">
+                    Livraison gratuite à partir de {FREE_SHIPPING_THRESHOLD} TND d'achat !
+                  </Typography>
+                </Box>
+              )}
 
               <Divider sx={{ my: 2 }} />
 

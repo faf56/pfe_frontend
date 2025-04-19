@@ -23,9 +23,20 @@ export const editproduit = (produit) => {
 export const fetchnewproduit = async () => {
   return await axios.get(PRODUIT_API + "/new")
 }
+
+// Fetch products with promotional prices
+export const fetchpromoproduit = async () => {
+  return await axios.get(PRODUIT_API + "/promotions")
+}
+
 export const fetchProduitsByScategorie = async (scategorieId) => {
   return await axios.get(PRODUIT_API + "/scategorie/" + scategorieId)
 }
+
+export const fetchProduitsByCategorie = async (categorieId) => {
+  return await axios.get(PRODUIT_API + "/categorie/" + categorieId)
+}
+
 export const fetchProduitsByMarque = async (marqueId) => {
   return await axios.get(PRODUIT_API + "/marque/" + marqueId)
 }
@@ -42,4 +53,3 @@ export const searchProduits = async (searchTerm) => {
     throw error // Propager l'erreur pour la gérer dans le composant
   }
 }
-

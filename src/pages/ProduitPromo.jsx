@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react"
 import Card from "../components/card/Card"
-import { fetchproduits } from "../service/produitservice"
+import { fetchpromoproduit } from "../service/produitservice"
 import FilterSidebar from "../components/filter/FilterSidebar"
 import FilterSidebarMobile from "../components/filter/FilterSidebarMobile"
 import { Box, Container, Grid, Typography, Skeleton, useMediaQuery, useTheme, Paper, Button } from "@mui/material"
 import "./ProductCard.css"
 
-const ProductCard = () => {
+const ProduitPromo = () => {
   const [allProduits, setAllProduits] = useState([])
   const [filteredProduits, setFilteredProduits] = useState([])
   const [loading, setLoading] = useState(true)
@@ -17,7 +17,7 @@ const ProductCard = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetchproduits()
+      const res = await fetchpromoproduit()
       setAllProduits(res.data)
       setFilteredProduits(res.data)
     } catch (error) {
@@ -60,7 +60,7 @@ const ProductCard = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl"  sx={{ py: 4,bgcolor: "#F1FBFA72" }}>
       <Grid container spacing={3}>
         {/* Sidebar pour desktop */}
         <Grid item xs={12} md={3} lg={2.5} sx={{ display: { xs: "none", md: "block" } }}>
@@ -71,7 +71,7 @@ const ProductCard = () => {
         <Grid item xs={12} md={9} lg={9.5}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h5" component="h1" gutterBottom>
-              Tous les produits
+              Produit En Promo
             </Typography>
             <Typography variant="body1" color="text.secondary">
               {filteredProduits.length} produits trouvés
@@ -129,4 +129,4 @@ const ProductCard = () => {
   )
 }
 
-export default ProductCard
+export default ProduitPromo

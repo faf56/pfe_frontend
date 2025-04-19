@@ -29,4 +29,3 @@ export const addUser = async (userData) => {
 export const updateUser = async (userData) => {
   return await axios.put(USER_API + "/" + userData._id, userData)
 }
-

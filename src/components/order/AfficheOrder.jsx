@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+"use client"
+
+import { useMemo, useState } from "react"
 import {
   Box,
   Paper,
@@ -17,9 +19,9 @@ import {
   Menu,
   MenuItem,
   Avatar,
-  AvatarGroup
-} from '@mui/material';
-import { 
+  AvatarGroup,
+} from "@mui/material"
+import {
   Print as PrintIcon,
   MoreVert as MoreIcon,
   LocalShipping as ShippedIcon,
@@ -27,142 +29,188 @@ import {
   Pending as PendingIcon,
   CheckCircle as CompletedIcon,
   Cancel as CancelledIcon,
-  Inventory as PreparingIcon
-} from '@mui/icons-material';
+  Inventory as PreparingIcon,
+} from "@mui/icons-material"
+import PrintOrderModal from "./PrintOrderModal"
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  borderRadius: '12px',
-  overflow: 'hidden',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-}));
+  borderRadius: "12px",
+  overflow: "hidden",
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+}))
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  '& .MuiTable-root': {
-    borderCollapse: 'separate',
-    borderSpacing: '0 8px',
+  "& .MuiTable-root": {
+    borderCollapse: "separate",
+    borderSpacing: "0 8px",
   },
-}));
+}))
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  backgroundColor: '#fff',
-  '&:hover': {
-    backgroundColor: '#f9f9f9',
+  backgroundColor: "#fff",
+  "&:hover": {
+    backgroundColor: "#f9f9f9",
   },
-  '& td': {
-    border: 'none',
-    padding: '16px 24px',
+  "& td": {
+    border: "none",
+    padding: "16px 24px",
   },
-}));
+}))
 
 const StyledTableHeadRow = styled(TableRow)(({ theme }) => ({
-  backgroundColor: '#f9f9f9',
-  '& th': {
-    border: 'none',
-    padding: '16px 24px',
+  backgroundColor: "#f9f9f9",
+  "& th": {
+    border: "none",
+    padding: "16px 24px",
     fontWeight: 600,
-    color: '#555',
-    fontSize: '0.875rem',
+    color: "#555",
+    fontSize: "0.875rem",
   },
-}));
+}))
 
-const StatusChip = styled(Chip)(({ theme, status }) => ({
-  borderRadius: '6px',
+const StatusChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== "status",
+})(({ theme, status }) => ({
+  borderRadius: "6px",
   fontWeight: 500,
-  backgroundColor: 
-    status === 'livree' ? 'rgba(76, 175, 80, 0.1)' :
-    status === 'expediee' ? 'rgba(25, 118, 210, 0.1)' :
-    status === 'confirmee' ? 'rgba(103, 58, 183, 0.1)' :
-    status === 'annulee' ? 'rgba(244, 67, 54, 0.1)' : 
-    status === 'en_preparation' ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 152, 0, 0.1)',
-  color: 
-    status === 'livree' ? '#2e7d32' :
-    status === 'expediee' ? '#1976d2' :
-    status === 'confirmee' ? '#673ab7' :
-    status === 'annulee' ? '#d32f2f' : 
-    status === 'en_preparation' ? '#ffa000' : '#ed6c02',
+  backgroundColor:
+    status === "livree"
+      ? "rgba(76, 175, 80, 0.1)"
+      : status === "expediee"
+        ? "rgba(25, 118, 210, 0.1)"
+        : status === "confirmee"
+          ? "rgba(103, 58, 183, 0.1)"
+          : status === "annulee"
+            ? "rgba(244, 67, 54, 0.1)"
+            : status === "en_preparation"
+              ? "rgba(255, 193, 7, 0.1)"
+              : "rgba(255, 152, 0, 0.1)",
+  color:
+    status === "livree"
+      ? "#2e7d32"
+      : status === "expediee"
+        ? "#1976d2"
+        : status === "confirmee"
+          ? "#673ab7"
+          : status === "annulee"
+            ? "#d32f2f"
+            : status === "en_preparation"
+              ? "#ffa000"
+              : "#ed6c02",
   border: `1px solid ${
-    status === 'livree' ? 'rgba(76, 175, 80, 0.5)' :
-    status === 'expediee' ? 'rgba(25, 118, 210, 0.5)' :
-    status === 'confirmee' ? 'rgba(103, 58, 183, 0.5)' :
-    status === 'annulee' ? 'rgba(244, 67, 54, 0.5)' : 
-    status === 'en_preparation' ? 'rgba(255, 193, 7, 0.5)' : 'rgba(255, 152, 0, 0.5)'
+    status === "livree"
+      ? "rgba(76, 175, 80, 0.5)"
+      : status === "expediee"
+        ? "rgba(25, 118, 210, 0.5)"
+        : status === "confirmee"
+          ? "rgba(103, 58, 183, 0.5)"
+          : status === "annulee"
+            ? "rgba(244, 67, 54, 0.5)"
+            : status === "en_preparation"
+              ? "rgba(255, 193, 7, 0.5)"
+              : "rgba(255, 152, 0, 0.5)"
   }`,
-}));
+}))
 
-const Afficheorder = ({ orders, onUpdateStatus, onPrintOrder }) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+const Afficheorder = ({ orders, onUpdateStatus }) => {
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [printModalOpen, setPrintModalOpen] = useState(false)
+  const [orderToPrint, setOrderToPrint] = useState(null)
 
   const handleMenuOpen = (event, order) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedOrder(order);
-  };
+    setAnchorEl(event.currentTarget)
+    setSelectedOrder(order)
+  }
 
   const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedOrder(null);
-  };
+    setAnchorEl(null)
+    setSelectedOrder(null)
+  }
 
   const handleStatusChange = (newStatus) => {
     if (selectedOrder) {
-      onUpdateStatus(selectedOrder._id, newStatus);
+      onUpdateStatus(selectedOrder._id, newStatus)
     }
-    handleMenuClose();
-  };
+    handleMenuClose()
+  }
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+    setPage(newPage)
+  }
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+    setRowsPerPage(Number.parseInt(event.target.value, 10))
+    setPage(0)
+  }
 
-  const enrichedOrders = useMemo(() =>
-    orders.map(order => ({
-      ...order,
-      formattedDate: new Date(order.createdAt).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      customerName: order.userID ? `${order.userID.firstname} ${order.userID.lastname}` : "Anonyme",
-      totalAmount: order.total
-    })),
-    [orders]
-  );
+  const handlePrintOrder = (orderId) => {
+    setOrderToPrint(orderId)
+    setPrintModalOpen(true)
+  }
+
+  const handleClosePrintModal = () => {
+    setPrintModalOpen(false)
+  }
+
+  const enrichedOrders = useMemo(
+    () =>
+      orders.map((order) => ({
+        ...order,
+        formattedDate: new Date(order.createdAt).toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        customerName: order.userID ? `${order.userID.firstname} ${order.userID.lastname}` : "Anonyme",
+        totalAmount: order.total,
+      })),
+    [orders],
+  )
 
   // Pagination
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - enrichedOrders.length) : 0;
-  const visibleOrders = enrichedOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - enrichedOrders.length) : 0
+  const visibleOrders = enrichedOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'livree': return <CompletedIcon fontSize="small" />;
-      case 'expediee': return <ShippedIcon fontSize="small" />;
-      case 'confirmee': return <PaidIcon fontSize="small" />;
-      case 'annulee': return <CancelledIcon fontSize="small" />;
-      case 'en_preparation': return <PreparingIcon fontSize="small" />;
-      default: return <PendingIcon fontSize="small" />;
+      case "livree":
+        return <CompletedIcon fontSize="small" />
+      case "expediee":
+        return <ShippedIcon fontSize="small" />
+      case "confirmee":
+        return <PaidIcon fontSize="small" />
+      case "annulee":
+        return <CancelledIcon fontSize="small" />
+      case "en_preparation":
+        return <PreparingIcon fontSize="small" />
+      default:
+        return <PendingIcon fontSize="small" />
     }
-  };
+  }
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'en_attente': return 'En attente';
-      case 'confirmee': return 'Confirmée';
-      case 'en_preparation': return 'En préparation';
-      case 'expediee': return 'Expédiée';
-      case 'livree': return 'Livrée';
-      case 'annulee': return 'Annulée';
-      default: return status;
+      case "en_attente":
+        return "En attente"
+      case "confirmee":
+        return "Confirmée"
+      case "en_preparation":
+        return "En préparation"
+      case "expediee":
+        return "Expédiée"
+      case "livree":
+        return "Livrée"
+      case "annulee":
+        return "Annulée"
+      default:
+        return status
     }
-  };
+  }
 
   return (
     <Box>
@@ -215,10 +263,10 @@ const Afficheorder = ({ orders, onUpdateStatus, onPrintOrder }) => {
                   <TableCell>
                     <AvatarGroup max={4}>
                       {order.produits.map((item, index) => (
-                        <Tooltip key={index} title={item.produitID?.title || 'Produit'} arrow>
-                          <Avatar 
-                            alt={item.produitID?.title} 
-                            src={item.produitID?.imagepro} 
+                        <Tooltip key={index} title={item.produitID?.title || "Produit"} arrow>
+                          <Avatar
+                            alt={item.produitID?.title}
+                            src={item.produitID?.imagepro}
                             sx={{ width: 32, height: 32 }}
                           />
                         </Tooltip>
@@ -229,20 +277,14 @@ const Afficheorder = ({ orders, onUpdateStatus, onPrintOrder }) => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex' }}>
+                    <Box sx={{ display: "flex" }}>
                       <Tooltip title="Imprimer">
-                        <IconButton
-                          size="small"
-                          onClick={() => onPrintOrder(order._id)}
-                        >
+                        <IconButton size="small" onClick={() => handlePrintOrder(order._id)}>
                           <PrintIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Modifier le statut">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleMenuOpen(e, order)}
-                        >
+                        <IconButton size="small" onClick={(e) => handleMenuOpen(e, order)}>
                           <MoreIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -272,32 +314,32 @@ const Afficheorder = ({ orders, onUpdateStatus, onPrintOrder }) => {
       </StyledPaper>
 
       {/* Menu pour changer le statut */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={() => handleStatusChange('en_attente')}>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={() => handleStatusChange("en_attente")}>
           <PendingIcon color="warning" sx={{ mr: 1 }} /> En attente
         </MenuItem>
-        <MenuItem onClick={() => handleStatusChange('confirmee')}>
+        <MenuItem onClick={() => handleStatusChange("confirmee")}>
           <PaidIcon color="secondary" sx={{ mr: 1 }} /> Confirmée
         </MenuItem>
-        <MenuItem onClick={() => handleStatusChange('en_preparation')}>
+        <MenuItem onClick={() => handleStatusChange("en_preparation")}>
           <PreparingIcon color="action" sx={{ mr: 1 }} /> En préparation
         </MenuItem>
-        <MenuItem onClick={() => handleStatusChange('expediee')}>
+        <MenuItem onClick={() => handleStatusChange("expediee")}>
           <ShippedIcon color="primary" sx={{ mr: 1 }} /> Expédiée
         </MenuItem>
-        <MenuItem onClick={() => handleStatusChange('livree')}>
+        <MenuItem onClick={() => handleStatusChange("livree")}>
           <CompletedIcon color="success" sx={{ mr: 1 }} /> Livrée
         </MenuItem>
-        <MenuItem onClick={() => handleStatusChange('annulee')}>
+        <MenuItem onClick={() => handleStatusChange("annulee")}>
           <CancelledIcon color="error" sx={{ mr: 1 }} /> Annulée
         </MenuItem>
       </Menu>
-    </Box>
-  );
-};
 
-export default Afficheorder;
+      {/* Modal d'impression */}
+      <PrintOrderModal open={printModalOpen} onClose={handleClosePrintModal} orderId={orderToPrint} />
+    </Box>
+  )
+}
+
+export default Afficheorder
+

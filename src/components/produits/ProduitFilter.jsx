@@ -17,8 +17,10 @@ import {
   Select,
   MenuItem,
   Divider,
+  FormControlLabel,
+  Switch,
 } from "@mui/material"
-import { Search, FilterList, Inventory2, InventoryOutlined, AttachMoney } from "@mui/icons-material"
+import { Search, FilterList, InventoryOutlined, AttachMoney, LocalOffer } from "@mui/icons-material"
 import { fetchscategories } from "../../service/scategorieservice"
 import { fetchmarques } from "../../service/marqueservice"
 
@@ -62,7 +64,15 @@ const PriceRangeSlider = styled(Slider)(({ theme }) => ({
   },
 }))
 
-const ProduitFilter = ({ onFilterChange, produits }) => {
+const PromoFilterBox = styled(Box)(({ theme }) => ({
+  padding: "12px",
+  borderRadius: "8px",
+  backgroundColor: "rgba(244, 67, 54, 0.05)",
+  border: "1px solid rgba(244, 67, 54, 0.2)",
+  marginTop: "16px",
+}))
+
+const ProduitFilter = ({ onFilterChange, produits, showPromoFilter = false }) => {
   const [stockFilter, setStockFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [marqueFilter, setMarqueFilter] = useState("all")
@@ -75,6 +85,8 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
   // Ajouter un nouveau state pour la plage de stock
   const [stockRange, setStockRange] = useState([0, 100])
   const [maxStock, setMaxStock] = useState(100)
+  // Ajouter un state pour le filtre de promotion
+  const [promoOnly, setPromoOnly] = useState(false)
 
   // Charger les catégories et marques
   useEffect(() => {
@@ -118,6 +130,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
         search: searchTerm,
         price: priceRange,
         stockRange: stockRange,
+        promoOnly: promoOnly,
       })
     }
   }
@@ -132,6 +145,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
       search: searchTerm,
       price: priceRange,
       stockRange: stockRange,
+      promoOnly: promoOnly,
     })
   }
 
@@ -145,6 +159,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
       search: searchTerm,
       price: priceRange,
       stockRange: stockRange,
+      promoOnly: promoOnly,
     })
   }
 
@@ -157,6 +172,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
       search: event.target.value,
       price: priceRange,
       stockRange: stockRange,
+      promoOnly: promoOnly,
     })
   }
 
@@ -169,6 +185,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
       search: searchTerm,
       price: newValue,
       stockRange: stockRange,
+      promoOnly: promoOnly,
     })
   }
 
@@ -182,6 +199,22 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
       search: searchTerm,
       price: priceRange,
       stockRange: newValue,
+      promoOnly: promoOnly,
+    })
+  }
+
+  // Gérer le changement du filtre de promotion
+  const handlePromoChange = (event) => {
+    const checked = event.target.checked
+    setPromoOnly(checked)
+    onFilterChange({
+      stock: stockFilter,
+      category: categoryFilter,
+      marque: marqueFilter,
+      search: searchTerm,
+      price: priceRange,
+      stockRange: stockRange,
+      promoOnly: checked,
     })
   }
 
@@ -221,9 +254,21 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
             }}
           />
         </Box>
-
-        
       </Box>
+
+      {showPromoFilter && (
+        <PromoFilterBox>
+          <FormControlLabel
+            control={<Switch checked={promoOnly} onChange={handlePromoChange} color="error" />}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <LocalOffer sx={{ color: "error.main", mr: 0.5, fontSize: 20 }} />
+                <Typography variant="body2">Afficher uniquement les produits en promotion</Typography>
+              </Box>
+            }
+          />
+        </PromoFilterBox>
+      )}
 
       <Divider sx={{ my: 2 }} />
 
@@ -334,7 +379,8 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
         priceRange[0] > 0 ||
         priceRange[1] < maxPrice ||
         stockRange[0] > 0 ||
-        stockRange[1] < maxStock) && (
+        stockRange[1] < maxStock ||
+        promoOnly) && (
         <Box sx={{ display: "flex", gap: 1, mt: 3, flexWrap: "wrap" }}>
           <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
             Filtres actifs:
@@ -362,6 +408,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
                   search: searchTerm,
                   price: priceRange,
                   stockRange: stockRange,
+                  promoOnly: promoOnly,
                 })
               }}
               size="small"
@@ -382,6 +429,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
                   search: searchTerm,
                   price: priceRange,
                   stockRange: stockRange,
+                  promoOnly: promoOnly,
                 })
               }}
               size="small"
@@ -402,6 +450,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
                   search: "",
                   price: priceRange,
                   stockRange: stockRange,
+                  promoOnly: promoOnly,
                 })
               }}
               size="small"
@@ -421,6 +470,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
                   search: searchTerm,
                   price: [0, maxPrice],
                   stockRange: stockRange,
+                  promoOnly: promoOnly,
                 })
               }}
               size="small"
@@ -428,6 +478,7 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
               variant="outlined"
             />
           )}
+
           {(stockRange[0] > 0 || stockRange[1] < maxStock) && (
             <Chip
               label={`Stock: ${stockRange[0]} - ${stockRange[1]} unités`}
@@ -440,11 +491,34 @@ const ProduitFilter = ({ onFilterChange, produits }) => {
                   search: searchTerm,
                   price: priceRange,
                   stockRange: [0, maxStock],
+                  promoOnly: promoOnly,
                 })
               }}
               size="small"
               color="success"
               variant="outlined"
+            />
+          )}
+
+          {promoOnly && (
+            <Chip
+              label="Produits en promotion uniquement"
+              onDelete={() => {
+                setPromoOnly(false)
+                onFilterChange({
+                  stock: stockFilter,
+                  category: categoryFilter,
+                  marque: marqueFilter,
+                  search: searchTerm,
+                  price: priceRange,
+                  stockRange: stockRange,
+                  promoOnly: false,
+                })
+              }}
+              size="small"
+              color="error"
+              variant="outlined"
+              icon={<LocalOffer fontSize="small" />}
             />
           )}
         </Box>

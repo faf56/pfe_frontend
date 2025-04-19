@@ -72,7 +72,7 @@ const Editmarque = ({ show, handleClose, mar, handleUpdateMarque }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [formErrors, setFormErrors] = useState({})
-
+  
   useEffect(() => {
     if (mar) {
       setMarque(mar)
@@ -81,11 +81,17 @@ const Editmarque = ({ show, handleClose, mar, handleUpdateMarque }) => {
           ? [
               {
                 source: mar.imagemarque,
-                options: { type: "local" },
+                options: { type: 'local' },
               },
             ]
-          : [],
+          : []
       )
+    } else {
+      setMarque({
+        nommarque: '',
+        imagemarque: '',
+      })
+      setFiles([])
     }
   }, [mar])
 
@@ -136,8 +142,13 @@ const Editmarque = ({ show, handleClose, mar, handleUpdateMarque }) => {
     load: (source, load, error, progress, abort, headers) => {
       fetch(source)
         .then((response) => response.blob())
-        .then((myBlob) => load(myBlob))
-        .catch((err) => error("Erreur lors du chargement de l'image"))
+        .then((myBlob) => {
+          load(myBlob)
+        })
+        .catch((err) => {
+          error("Erreur lors du chargement de l'image")
+          abort()
+        })
     },
     process: (fieldName, file, metadata, load, error, progress, abort) => {
       uploadImageToCloudinary(file)
@@ -154,15 +165,27 @@ const Editmarque = ({ show, handleClose, mar, handleUpdateMarque }) => {
 
   const handleUpdate = async (event) => {
     event.preventDefault()
-
+  
     if (!validateForm()) return
-
+  
     setLoading(true)
     setError(null)
-
+  
     try {
-      const response = await editmarque(marque)
-      handleUpdateMarque(response.data)
+      // Si aucune nouvelle image n'a été téléchargée, conservez l'image existante
+      const marqueToUpdate = {
+        ...marque,
+        imagemarque: files.length > 0 ? marque.imagemarque : mar.imagemarque
+      }
+  
+      const response = await editmarque(marqueToUpdate)
+  
+      if (response && response.data) {
+        handleUpdateMarque(response.data)
+      } else {
+        handleUpdateMarque(marqueToUpdate)
+      }
+  
       handleClose()
     } catch (err) {
       console.error("Erreur lors de la modification de la marque :", err)
@@ -314,4 +337,3 @@ const Editmarque = ({ show, handleClose, mar, handleUpdateMarque }) => {
 }
 
 export default Editmarque
-

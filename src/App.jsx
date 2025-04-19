@@ -44,6 +44,11 @@ import UserAdmin from "./components/admin/UserAdmin";
 import Page from "./pages/Page";
 import ProductsPage from "./pages/ProductsPage";
 import LivraisonAdmin from "./components/admin/LivraisonAdmin";
+import AdminContact from "./components/admin/AdminContact";
+import ContactPage from "./components/contact/ContactPage";
+import MarqueProduitsPage from "./pages/MarqueProduitsPage";
+import MarquesPage from "./pages/MarquesPage";
+import ProduitPromo from "./pages/ProduitPromo";
 
 // 🔹 Layout Principal (avec Header et Footer)
 const MainLayout = () => (
@@ -71,8 +76,13 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Homebody />} />
           <Route path="/allproduct" element={<ProductCard />} />
+          <Route path="/promo" element={<ProduitPromo />} />
+
+          <Route path="/marques" element={<MarquesPage />} />
+        <Route path="/marques/:id" element={<MarqueProduitsPage />} />
           <Route path="/page" element={<Page/>} />
           <Route path="/product" element={<ProductsPage/>} />
+          <Route path="/contact" element={<ContactPage/>} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/panier" element={<CartPage />} />
           <Route path="/produit/:id" element={<ProductDetail />} />
@@ -92,6 +102,8 @@ function App() {
         <Route path="/admin/orders" element={<OrderAdmin />} />
         <Route path="/admin/users" element={<UserAdmin />} />
         <Route path="/admin/livraison" element={<LivraisonAdmin/>} />
+        <Route path="/admin/contact" element={<AdminContact/>} />
+        
         </Route>
         
           
@@ -102,6 +114,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/register" element={<Register />} />
+        
             
 
           </Routes>

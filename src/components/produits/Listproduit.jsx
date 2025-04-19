@@ -36,6 +36,8 @@ const StatCard = styled(Paper)(({ theme }) => ({
   alignItems: "center",
   gap: "16px",
   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+  
+  
 }))
 
 const StatIcon = styled(Box)(({ theme, color }) => ({
@@ -161,8 +163,7 @@ const Listproduit = () => {
 
   // Calculate statistics
   const totalProducts = produits.length
-  const totalStock = produits.reduce((acc, product) => acc + product.stock, 0)
-  const lowStockProducts = produits.filter((product) => product.stock <= 10).length
+  
 
   return (
     <Box sx={{ padding: "24px" }}>
@@ -226,33 +227,9 @@ const Listproduit = () => {
           </Box>
         </StatCard>
 
-        <StatCard>
-          <StatIcon color="#4caf50">
-            <Inventory2Outlined />
-          </StatIcon>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Stock Total
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
-              {totalStock}
-            </Typography>
-          </Box>
-        </StatCard>
+        
 
-        <StatCard>
-          <StatIcon color="#ff9800">
-            <Inventory2Outlined />
-          </StatIcon>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Produits en Stock Faible
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
-              {lowStockProducts}
-            </Typography>
-          </Box>
-        </StatCard>
+        
       </StatsContainer>
 
       <Box sx={{ my: 3 }}>

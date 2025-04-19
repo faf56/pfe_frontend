@@ -1,6 +1,8 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import AfficheUsers from "./AfficheUsers"
-import UserStats from "./UserStats"
+
 import UserFilters from "./UserFilters"
 import AddUser from "./AddUser"
 import { CircularProgress, Box, Typography, Paper, Button, styled } from "@mui/material"
@@ -117,6 +119,16 @@ const ListUsers = () => {
       result = result.filter((user) => user.role === filters.role)
     }
 
+    // Filter by ville
+    if (filters.ville && filters.ville !== "all") {
+      result = result.filter((user) => user.userVille === filters.ville)
+    }
+
+    // Filter by sexe
+    if (filters.sexe && filters.sexe !== "all") {
+      result = result.filter((user) => user.sexe === filters.sexe)
+    }
+
     // Filter by search term
     if (filters.search) {
       const searchLower = filters.search.toLowerCase()
@@ -125,7 +137,8 @@ const ListUsers = () => {
           user.firstname?.toLowerCase().includes(searchLower) ||
           user.lastname?.toLowerCase().includes(searchLower) ||
           user.email?.toLowerCase().includes(searchLower) ||
-          (user.telephone && user.telephone.toString().includes(searchLower)),
+          (user.telephone && user.telephone.toString().includes(searchLower)) ||
+          (user.userVille && user.userVille.toLowerCase().includes(searchLower)),
       )
     }
 
@@ -226,10 +239,8 @@ const ListUsers = () => {
         </StatCard>
       </StatsContainer>
 
-      <UserStats users={users} />
-
       <Box sx={{ my: 3 }}>
-        <UserFilters onFilterChange={handleFilterChange} />
+        <UserFilters onFilterChange={handleFilterChange} users={users} />
       </Box>
 
       {isPending ? (

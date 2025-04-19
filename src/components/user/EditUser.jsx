@@ -23,6 +23,9 @@ import {
   Alert,
   Tabs,
   Tab,
+  Select,
+  MenuItem,
+  InputLabel,
 } from "@mui/material"
 import {
   Close,
@@ -34,8 +37,39 @@ import {
   AccountCircle,
   Lock,
   Home,
+  LocationOn,
+  Male,
+  Female,
 } from "@mui/icons-material"
 import { updateUser } from "../../service/userservice"
+
+// Liste des principales villes de Tunisie
+const tunisianCities = [
+  "Tunis",
+  "Sfax",
+  "Sousse",
+  "Kairouan",
+  "Bizerte",
+  "Gabès",
+  "Ariana",
+  "Gafsa",
+  "Monastir",
+  "Ben Arous",
+  "Kasserine",
+  "Médenine",
+  "Nabeul",
+  "Tataouine",
+  "Béja",
+  "Jendouba",
+  "El Kef",
+  "Mahdia",
+  "Sidi Bouzid",
+  "Tozeur",
+  "Siliana",
+  "Kébili",
+  "Zaghouan",
+  "Manouba",
+].sort() // Tri alphabétique des villes
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-paper": {
@@ -114,6 +148,59 @@ const RoleIcon = styled(Box, {
   marginBottom: "8px",
 }))
 
+const GenderOption = styled(FormControlLabel, {
+  shouldForwardProp: (prop) => prop !== "isSelected",
+})(({ theme, isSelected }) => ({
+  flex: 1,
+  margin: 0,
+  "& .MuiRadio-root": {
+    display: "none",
+  },
+  "& .MuiTypography-root": {
+    width: "100%",
+  },
+}))
+
+const GenderButton = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isSelected" && prop !== "$gender",
+})(({ theme, $isSelected, $gender }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "16px",
+  borderRadius: "8px",
+  border: `1px solid ${$isSelected ? ($gender === "homme" ? "#1976d2" : "#e91e63") : "#e0e0e0"}`,
+  backgroundColor: $isSelected
+    ? $gender === "homme"
+      ? "rgba(25, 118, 210, 0.08)"
+      : "rgba(233, 30, 99, 0.08)"
+    : "transparent",
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+  "&:hover": {
+    backgroundColor: $isSelected
+      ? $gender === "homme"
+        ? "rgba(25, 118, 210, 0.12)"
+        : "rgba(233, 30, 99, 0.12)"
+      : "#f5f5f5",
+  },
+}))
+
+const GenderIcon = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$gender",
+})(({ theme, $gender }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "48px",
+  height: "48px",
+  borderRadius: "50%",
+  backgroundColor: $gender === "homme" ? "rgba(25, 118, 210, 0.12)" : "rgba(233, 30, 99, 0.12)",
+  color: $gender === "homme" ? "#1976d2" : "#e91e63",
+  marginBottom: "8px",
+}))
+
 const SubmitButton = styled(Button)(({ theme }) => ({
   borderRadius: "8px",
   padding: "10px 24px",
@@ -153,6 +240,8 @@ const EditUser = ({ open, handleClose, user: initialUser, handleUpdateUser }) =>
     lastname: "",
     email: "",
     telephone: "",
+    userVille: "",
+    sexe: "",
     role: "user",
     isActive: true,
   })
@@ -177,6 +266,8 @@ const EditUser = ({ open, handleClose, user: initialUser, handleUpdateUser }) =>
         lastname: initialUser.lastname || "",
         email: initialUser.email || "",
         telephone: initialUser.telephone || "",
+        userVille: initialUser.userVille || "",
+        sexe: initialUser.sexe || "",
         role: initialUser.role || "user",
         isActive: initialUser.isActive !== undefined ? initialUser.isActive : true,
       })
@@ -413,6 +504,72 @@ const EditUser = ({ open, handleClose, user: initialUser, handleUpdateUser }) =>
               disabled={loading}
             />
 
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="ville-label">Ville</InputLabel>
+              <Select
+                labelId="ville-label"
+                id="userVille"
+                name="userVille"
+                value={user.userVille || ""}
+                onChange={handleChange}
+                label="Ville"
+                disabled={loading}
+                startAdornment={
+                  <InputAdornment position="start">
+                    <LocationOn />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value="">
+                  <em>Non définie</em>
+                </MenuItem>
+                {tunisianCities.map((city) => (
+                  <MenuItem key={city} value={city}>
+                    {city}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              Sexe
+            </Typography>
+
+            <FormControl component="fieldset" fullWidth sx={{ mb: 2 }}>
+              <RadioGroup
+                name="sexe"
+                value={user.sexe || ""}
+                onChange={handleChange}
+                sx={{ display: "flex", flexDirection: "row", gap: 2 }}
+              >
+                <GenderOption
+                  value="homme"
+                  control={<Radio />}
+                  label={
+                    <GenderButton $isSelected={user.sexe === "homme"} $gender="homme">
+                      <GenderIcon $gender="homme">
+                        <Male />
+                      </GenderIcon>
+                      <Typography variant="subtitle2">Homme</Typography>
+                    </GenderButton>
+                  }
+                />
+
+                <GenderOption
+                  value="femme"
+                  control={<Radio />}
+                  label={
+                    <GenderButton $isSelected={user.sexe === "femme"} $gender="femme">
+                      <GenderIcon $gender="femme">
+                        <Female />
+                      </GenderIcon>
+                      <Typography variant="subtitle2">Femme</Typography>
+                    </GenderButton>
+                  }
+                />
+              </RadioGroup>
+            </FormControl>
+
             <Divider sx={{ my: 2 }} />
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -545,4 +702,3 @@ const EditUser = ({ open, handleClose, user: initialUser, handleUpdateUser }) =>
 }
 
 export default EditUser
-

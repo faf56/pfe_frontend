@@ -20,8 +20,11 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  Switch,
+  FormControlLabel,
+  Chip,
 } from "@mui/material"
-import { Close, Edit as EditIcon } from "@mui/icons-material"
+import { Close, Edit as EditIcon, LocalOffer } from "@mui/icons-material"
 import { fetchscategories } from "../../service/scategorieservice"
 import { fetchmarques } from "../../service/marqueservice"
 import { editproduit } from "../../service/produitservice"
@@ -80,6 +83,14 @@ const ImageUploadSection = styled(Box)(({ theme }) => ({
   backgroundColor: "#f8f9fa",
 }))
 
+const PromoSection = styled(Box)(({ theme }) => ({
+  padding: "16px",
+  borderRadius: "8px",
+  border: "1px solid #ffcdd2",
+  backgroundColor: "rgba(244, 67, 54, 0.05)",
+  marginBottom: "16px",
+}))
+
 const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
   const [produit, setProduit] = useState({
     _id: "",
@@ -89,6 +100,7 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
     scategorieID: "",
     stock: 0,
     prix: 0,
+    prixPromo: null,
     imagepro: "",
   })
 
@@ -99,6 +111,8 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
   const [error, setError] = useState(null)
   const [formErrors, setFormErrors] = useState({})
   const [loadingData, setLoadingData] = useState(true)
+  const [hasPromo, setHasPromo] = useState(false)
+  const [promoPercent, setPromoPercent] = useState(0)
 
   const loadscategories = async () => {
     try {
@@ -138,6 +152,18 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
       // Vérifiez si la scategorieID existe dans les catégories disponibles
       const scategorieExists = scategories.some((scat) => scat._id === pro.scategorieID?._id)
 
+      // Vérifier si le produit a un prix promotionnel
+      const promoExists =
+        pro.prixPromo !== undefined && pro.prixPromo !== null && pro.prixPromo > 0 && pro.prixPromo < pro.prix
+      setHasPromo(promoExists)
+
+      // Calculer le pourcentage de réduction si une promotion existe
+      let calculatedPercent = 0
+      if (promoExists && pro.prix > 0) {
+        calculatedPercent = Math.round(((pro.prix - pro.prixPromo) / pro.prix) * 100)
+      }
+      setPromoPercent(calculatedPercent)
+
       setProduit({
         _id: pro._id || "",
         title: pro.title || "",
@@ -146,6 +172,7 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
         scategorieID: scategorieExists ? pro.scategorieID?._id : "",
         stock: pro.stock || 0,
         prix: pro.prix || 0,
+        prixPromo: promoExists ? pro.prixPromo : null,
         imagepro: pro.imagepro || "",
       })
 
@@ -169,6 +196,14 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
       errors.prix = "Le prix doit être supérieur à 0"
     }
 
+    if (hasPromo) {
+      if (!produit.prixPromo || produit.prixPromo <= 0) {
+        errors.prixPromo = "Le prix promotionnel doit être supérieur à 0"
+      } else if (produit.prixPromo >= produit.prix) {
+        errors.prixPromo = "Le prix promotionnel doit être inférieur au prix normal"
+      }
+    }
+
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -183,6 +218,33 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
     }
   }
 
+  const handlePromoToggle = (e) => {
+    const checked = e.target.checked
+    setHasPromo(checked)
+    if (!checked) {
+      setProduit({ ...produit, prixPromo: null })
+      if (formErrors.prixPromo) {
+        setFormErrors({ ...formErrors, prixPromo: null })
+      }
+    }
+  }
+
+  const handlePercentChange = (e) => {
+    const percent = Number.parseFloat(e.target.value)
+    setPromoPercent(percent)
+
+    // Calculer le nouveau prix promotionnel basé sur le pourcentage
+    if (percent > 0 && percent < 100 && produit.prix > 0) {
+      const newPromoPrice = produit.prix * (1 - percent / 100)
+      setProduit({ ...produit, prixPromo: Number.parseFloat(newPromoPrice.toFixed(3)) })
+
+      // Clear error for prixPromo if it exists
+      if (formErrors.prixPromo) {
+        setFormErrors({ ...formErrors, prixPromo: null })
+      }
+    }
+  }
+
   const handleUpdate = async (event) => {
     event.preventDefault()
 
@@ -192,7 +254,13 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
     setError(null)
 
     try {
-      const response = await editproduit(produit)
+      // Si pas de promo, s'assurer que prixPromo est null
+      const productData = {
+        ...produit,
+        prixPromo: hasPromo ? produit.prixPromo : null,
+      }
+
+      const response = await editproduit(productData)
       handleUpdateProduct(response.data)
       handleClose()
     } catch (err) {
@@ -264,6 +332,12 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
     setTimeout(() => {
       document.body.removeChild(tempButton)
     }, 100)
+  }
+
+  // Calculer le pourcentage de réduction
+  const calculateDiscount = () => {
+    if (!hasPromo || !produit.prix || !produit.prixPromo || produit.prixPromo >= produit.prix) return 0
+    return Math.round(((produit.prix - produit.prixPromo) / produit.prix) * 100)
   }
 
   return (
@@ -347,36 +421,103 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
                   rows={2}
                 />
 
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <FormField
-                    fullWidth
-                    label="Prix"
-                    name="prix"
-                    type="number"
-                    value={produit.prix}
-                    onChange={handleChange}
-                    error={!!formErrors.prix}
-                    helperText={formErrors.prix}
-                    disabled={loading}
-                    required
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">DT</InputAdornment>,
-                    }}
-                  />
+                <FormField
+                  fullWidth
+                  label="Prix"
+                  name="prix"
+                  type="number"
+                  value={produit.prix}
+                  onChange={handleChange}
+                  error={!!formErrors.prix}
+                  helperText={formErrors.prix}
+                  disabled={loading}
+                  required
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">DT</InputAdornment>,
+                  }}
+                />
 
-                  <FormField
-                    fullWidth
-                    label="Quantité en stock"
-                    name="stock"
-                    type="number"
-                    value={produit.stock}
-                    onChange={handleChange}
-                    error={!!formErrors.stock}
-                    helperText={formErrors.stock}
-                    disabled={loading}
-                    required
+                {/* Section Prix Promotionnel */}
+                <Box sx={{ mb: 2 }}>
+                  <FormControlLabel
+                    control={<Switch checked={hasPromo} onChange={handlePromoToggle} color="error" />}
+                    label={
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <LocalOffer sx={{ color: "error.main", mr: 0.5, fontSize: 20 }} />
+                        <Typography variant="body2">Prix promotionnel</Typography>
+                      </Box>
+                    }
                   />
                 </Box>
+
+                {hasPromo && (
+                  <PromoSection>
+                    <Typography variant="subtitle2" color="error" sx={{ mb: 1, display: "flex", alignItems: "center" }}>
+                      <LocalOffer sx={{ mr: 0.5, fontSize: 18 }} />
+                      Prix promotionnel
+                    </Typography>
+
+                    <FormField
+                      fullWidth
+                      label="Prix promotionnel"
+                      name="prixPromo"
+                      type="number"
+                      value={produit.prixPromo || ""}
+                      onChange={handleChange}
+                      error={!!formErrors.prixPromo}
+                      helperText={formErrors.prixPromo}
+                      disabled={loading}
+                      required={hasPromo}
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">DT</InputAdornment>,
+                      }}
+                      sx={{ mb: 1 }}
+                    />
+
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+                      <FormField
+                        fullWidth
+                        label="Pourcentage de réduction"
+                        name="promoPercent"
+                        type="number"
+                        value={promoPercent}
+                        onChange={handlePercentChange}
+                        InputProps={{
+                          endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                          inputProps: { min: 0, max: 99 },
+                        }}
+                        helperText="Saisissez le pourcentage pour calculer automatiquement le prix promotionnel"
+                      />
+
+                      {produit.prix > 0 && produit.prixPromo > 0 && produit.prixPromo < produit.prix && (
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Réduction:
+                          </Typography>
+                          <Chip
+                            label={`-${calculateDiscount()}%`}
+                            color="error"
+                            size="small"
+                            sx={{ fontWeight: "bold" }}
+                          />
+                        </Box>
+                      )}
+                    </Box>
+                  </PromoSection>
+                )}
+
+                <FormField
+                  fullWidth
+                  label="Quantité en stock"
+                  name="stock"
+                  type="number"
+                  value={produit.stock}
+                  onChange={handleChange}
+                  error={!!formErrors.stock}
+                  helperText={formErrors.stock}
+                  disabled={loading}
+                  required
+                />
 
                 <FormSelect fullWidth error={!!formErrors.marqueID}>
                   <InputLabel id="marque-label">Marque</InputLabel>
@@ -510,4 +651,3 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
 }
 
 export default Editproduit
-

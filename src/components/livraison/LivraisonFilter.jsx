@@ -11,22 +11,6 @@ const FiltersContainer = styled(Paper)(({ theme }) => ({
   boxShadow: "0 2px 12px rgba(0, 0, 0, 0.04)",
 }))
 
-const PriceRangeSlider = styled(Slider)(({ theme }) => ({
-  width: "100%",
-  color: "#1976d2",
-  "& .MuiSlider-thumb": {
-    height: 20,
-    width: 20,
-    backgroundColor: "#fff",
-    border: "2px solid currentColor",
-    "&:focus, &:hover, &.Mui-active, &.Mui-focusVisible": {
-      boxShadow: "0 0 0 8px rgba(25, 118, 210, 0.16)",
-    },
-  },
-  "& .MuiSlider-valueLabel": {
-    backgroundColor: "#1976d2",
-  },
-}))
 
 const LivraisonFilter = ({ onFilterChange, livraisons }) => {
   const [searchTerm, setSearchTerm] = useState("")
@@ -103,30 +87,7 @@ const LivraisonFilter = ({ onFilterChange, livraisons }) => {
 
       <Divider sx={{ my: 2 }} />
 
-      <Box sx={{ px: 2, mt: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-          <AttachMoney sx={{ color: "#757575", mr: 1 }} />
-          <Typography variant="body2" color="text.secondary">
-            Fourchette de prix
-          </Typography>
-        </Box>
-        <PriceRangeSlider
-          value={priceRange}
-          onChange={handlePriceChange}
-          valueLabelDisplay="auto"
-          min={0}
-          max={maxPrice}
-          valueLabelFormat={(value) => `${value} TND`}
-        />
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {formatPrice(priceRange[0])} TND
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {formatPrice(priceRange[1])} TND
-          </Typography>
-        </Box>
-      </Box>
+      
 
       {(searchTerm || priceRange[0] > 0 || priceRange[1] < maxPrice) && (
         <Box sx={{ display: "flex", gap: 1, mt: 3, flexWrap: "wrap" }}>

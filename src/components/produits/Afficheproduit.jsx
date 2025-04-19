@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+"use client"
+
+import { useMemo, useState } from "react"
 import {
   Box,
   Paper,
@@ -13,143 +15,140 @@ import {
   IconButton,
   Chip,
   Tooltip,
-  styled
-} from '@mui/material';
-import { 
-  Edit as EditIcon, 
+  styled,
+} from "@mui/material"
+import {
+  Edit as EditIcon,
   Delete as DeleteIcon,
   AttachMoney as PriceIcon,
-  Inventory as InventoryIcon
-} from '@mui/icons-material';
-import Editproduit from './Editproduit';
+  Inventory as InventoryIcon,
+  LocalOffer as LocalOfferIcon,
+} from "@mui/icons-material"
+import Editproduit from "./Editproduit"
 
 // Styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  borderRadius: '12px',
-  overflow: 'hidden',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-}));
+  borderRadius: "12px",
+  overflow: "hidden",
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+}))
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  '& .MuiTable-root': {
-    borderCollapse: 'separate',
-    borderSpacing: '0 8px',
+  "& .MuiTable-root": {
+    borderCollapse: "separate",
+    borderSpacing: "0 8px",
   },
-}));
+}))
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  backgroundColor: '#fff',
-  '&:hover': {
-    backgroundColor: '#f9f9f9',
+  backgroundColor: "#fff",
+  "&:hover": {
+    backgroundColor: "#f9f9f9",
   },
-  '& td': {
-    border: 'none',
-    padding: '16px 24px',
+  "& td": {
+    border: "none",
+    padding: "16px 24px",
   },
-}));
+}))
 
 const StyledTableHeadRow = styled(TableRow)(({ theme }) => ({
-  backgroundColor: '#f9f9f9',
-  '& th': {
-    border: 'none',
-    padding: '16px 24px',
+  backgroundColor: "#f9f9f9",
+  "& th": {
+    border: "none",
+    padding: "16px 24px",
     fontWeight: 600,
-    color: '#555',
-    fontSize: '0.875rem',
+    color: "#555",
+    fontSize: "0.875rem",
   },
-}));
+}))
 
-const ProductImage = styled('img')(({ theme }) => ({
-  width: '60px',
-  height: '60px',
-  borderRadius: '8px',
-  objectFit: 'cover',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-}));
+const ProductImage = styled("img")(({ theme }) => ({
+  width: "60px",
+  height: "60px",
+  borderRadius: "8px",
+  objectFit: "cover",
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+}))
 
-const ActionButton = styled(IconButton)(({ theme, color = 'primary' }) => ({
-  backgroundColor: color === 'primary' ? 'rgba(25, 118, 210, 0.08)' : 'rgba(211, 47, 47, 0.08)',
-  marginRight: '8px',
-  '&:hover': {
-    backgroundColor: color === 'primary' ? 'rgba(25, 118, 210, 0.16)' : 'rgba(211, 47, 47, 0.16)',
+const ActionButton = styled(IconButton)(({ theme, color = "primary" }) => ({
+  backgroundColor: color === "primary" ? "rgba(25, 118, 210, 0.08)" : "rgba(211, 47, 47, 0.08)",
+  marginRight: "8px",
+  "&:hover": {
+    backgroundColor: color === "primary" ? "rgba(25, 118, 210, 0.16)" : "rgba(211, 47, 47, 0.16)",
   },
-}));
+}))
 
-const StockChip = styled(Chip)(({ theme, stock }) => ({
-  borderRadius: '6px',
+const StockChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== "stock",
+})(({ theme, stock }) => ({
+  borderRadius: "6px",
   fontWeight: 500,
-  backgroundColor: stock > 10 
-    ? 'rgba(76, 175, 80, 0.1)' 
-    : stock > 0 
-      ? 'rgba(255, 152, 0, 0.1)' 
-      : 'rgba(244, 67, 54, 0.1)',
-  color: stock > 10 
-    ? '#2e7d32' 
-    : stock > 0 
-      ? '#ed6c02' 
-      : '#d32f2f',
+  backgroundColor:
+    stock > 10 ? "rgba(76, 175, 80, 0.1)" : stock > 0 ? "rgba(255, 152, 0, 0.1)" : "rgba(244, 67, 54, 0.1)",
+  color: stock > 10 ? "#2e7d32" : stock > 0 ? "#ed6c02" : "#d32f2f",
   border: `1px solid ${
-    stock > 10 
-      ? 'rgba(76, 175, 80, 0.5)' 
-      : stock > 0 
-        ? 'rgba(255, 152, 0, 0.5)' 
-        : 'rgba(244, 67, 54, 0.5)'
+    stock > 10 ? "rgba(76, 175, 80, 0.5)" : stock > 0 ? "rgba(255, 152, 0, 0.5)" : "rgba(244, 67, 54, 0.5)"
   }`,
-}));
+}))
 
-const PriceChip = styled(Chip)(({ theme }) => ({
-  borderRadius: '6px',
+// Fix the PriceChip to prevent isPromo from being passed to the DOM
+const PriceChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== "isPromo",
+})(({ theme, isPromo }) => ({
+  borderRadius: "6px",
   fontWeight: 600,
-  backgroundColor: 'rgba(25, 118, 210, 0.08)',
-  color: '#1976d2',
-  border: '1px solid rgba(25, 118, 210, 0.3)',
-}));
+  backgroundColor: isPromo ? "rgba(244, 67, 54, 0.08)" : "rgba(25, 118, 210, 0.08)",
+  color: isPromo ? "#d32f2f" : "#1976d2",
+  border: `1px solid ${isPromo ? "rgba(244, 67, 54, 0.3)" : "rgba(25, 118, 210, 0.3)"}`,
+}))
 
 const Afficheproduit = ({ produits, handleDeleteProduct, handleUpdateProduct }) => {
-  const [show, setShow] = useState(false);
-  const [produit, setProduit] = useState({});
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [show, setShow] = useState(false)
+  const [produit, setProduit] = useState({})
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-  
+  const handleClose = () => setShow(false)
+  const handleShow = () => setShow(true)
+
   const handleEdit = (pro) => {
-    setProduit(pro);
-    handleShow();
-  };
+    setProduit(pro)
+    handleShow()
+  }
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+    setPage(newPage)
+  }
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+    setRowsPerPage(Number.parseInt(event.target.value, 10))
+    setPage(0)
+  }
 
-  const enrichedProduits = useMemo(() =>
-    produits.map(pro => ({
-      ...pro,
-      nommarque: pro.marqueID?.nommarque || "Non défini",
-      nomscategorie: pro.scategorieID?.nomscategorie || "Non défini"
-    })),
-    [produits]
-  );
+  const enrichedProduits = useMemo(
+    () =>
+      produits.map((pro) => ({
+        ...pro,
+        nommarque: pro.marqueID?.nommarque || "Non défini",
+        nomscategorie: pro.scategorieID?.nomscategorie || "Non défini",
+        hasPromo:
+          pro.prixPromo !== null && pro.prixPromo !== undefined && pro.prixPromo > 0 && pro.prixPromo < pro.prix,
+        discountPercent:
+          pro.prixPromo !== null && pro.prixPromo !== undefined && pro.prixPromo > 0 && pro.prixPromo < pro.prix
+            ? Math.round(((pro.prix - pro.prixPromo) / pro.prix) * 100)
+            : 0,
+      })),
+    [produits],
+  )
 
   // Pagination
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - enrichedProduits.length) : 0;
-  const visibleProduits = enrichedProduits.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - enrichedProduits.length) : 0
+  const visibleProduits = enrichedProduits.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   return (
     <Box>
       {show && (
-        <Editproduit
-          show={show}
-          handleClose={handleClose}
-          pro={produit}
-          handleUpdateProduct={handleUpdateProduct}
-        />
+        <Editproduit show={show} handleClose={handleClose} pro={produit} handleUpdateProduct={handleUpdateProduct} />
       )}
 
       <StyledPaper>
@@ -170,13 +169,31 @@ const Afficheproduit = ({ produits, handleDeleteProduct, handleUpdateProduct }) 
               {visibleProduits.map((produit) => (
                 <StyledTableRow key={produit._id}>
                   <TableCell>
-                    <ProductImage
-                      src={produit.imagepro || "/placeholder.svg?height=60&width=60"}
-                      alt={produit.title}
-                      onError={(e) => {
-                        e.target.src = "/placeholder.svg?height=60&width=60";
-                      }}
-                    />
+                    <Box sx={{ position: "relative" }}>
+                      {produit.hasPromo && (
+                        <Chip
+                          label={`-${produit.discountPercent}%`}
+                          size="small"
+                          color="error"
+                          sx={{
+                            position: "absolute",
+                            top: -8,
+                            left: -8,
+                            zIndex: 1,
+                            fontSize: "0.625rem",
+                            height: "20px",
+                            fontWeight: "bold",
+                          }}
+                        />
+                      )}
+                      <ProductImage
+                        src={produit.imagepro || "/placeholder.svg?height=60&width=60"}
+                        alt={produit.title}
+                        onError={(e) => {
+                          e.target.src = "/placeholder.svg?height=60&width=60"
+                        }}
+                      />
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Box>
@@ -189,27 +206,40 @@ const Afficheproduit = ({ produits, handleDeleteProduct, handleUpdateProduct }) 
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Chip 
-                      label={produit.nommarque} 
-                      size="small" 
-                      variant="outlined"
-                      sx={{ borderRadius: '6px' }}
-                    />
+                    <Chip label={produit.nommarque} size="small" variant="outlined" sx={{ borderRadius: "6px" }} />
                   </TableCell>
                   <TableCell>
-                    <Chip 
-                      label={produit.nomscategorie} 
-                      size="small" 
-                      variant="outlined"
-                      sx={{ borderRadius: '6px' }}
-                    />
+                    <Chip label={produit.nomscategorie} size="small" variant="outlined" sx={{ borderRadius: "6px" }} />
                   </TableCell>
                   <TableCell>
-                    <PriceChip
-                      
-                      label={`${produit.prix.toFixed(3)} TND`}
-                      size="small"
-                    />
+                    {produit.hasPromo ? (
+                      <Box>
+                        <PriceChip
+                          icon={<LocalOfferIcon fontSize="small" />}
+                          label={`${produit.prixPromo.toFixed(3)} TND`}
+                          size="small"
+                          isPromo={true}
+                        />
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            display: "block",
+                            textDecoration: "line-through",
+                            mt: 0.5,
+                          }}
+                        >
+                          {produit.prix.toFixed(3)} TND
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <PriceChip
+                        icon={<PriceIcon fontSize="small" />}
+                        label={`${produit.prix.toFixed(3)} TND`}
+                        size="small"
+                        isPromo={false}
+                      />
+                    )}
                   </TableCell>
                   <TableCell>
                     <StockChip
@@ -220,22 +250,14 @@ const Afficheproduit = ({ produits, handleDeleteProduct, handleUpdateProduct }) 
                     />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex' }}>
+                    <Box sx={{ display: "flex" }}>
                       <Tooltip title="Modifier">
-                        <ActionButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleEdit(produit)}
-                        >
+                        <ActionButton size="small" color="primary" onClick={() => handleEdit(produit)}>
                           <EditIcon fontSize="small" />
                         </ActionButton>
                       </Tooltip>
                       <Tooltip title="Supprimer">
-                        <ActionButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteProduct(produit._id)}
-                        >
+                        <ActionButton size="small" color="error" onClick={() => handleDeleteProduct(produit._id)}>
                           <DeleteIcon fontSize="small" />
                         </ActionButton>
                       </Tooltip>
@@ -264,7 +286,7 @@ const Afficheproduit = ({ produits, handleDeleteProduct, handleUpdateProduct }) 
         />
       </StyledPaper>
     </Box>
-  );
-};
+  )
+}
 
-export default Afficheproduit;
+export default Afficheproduit

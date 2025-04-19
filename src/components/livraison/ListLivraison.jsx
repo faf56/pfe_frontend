@@ -142,10 +142,7 @@ const ListLivraison = () => {
     return Number(price).toFixed(3)
   }
 
-  // Calculer le total des frais de livraison
-  const totalFrais = livraisons.reduce((acc, livraison) => acc + (livraison.frais || 0), 0)
-  // Calculer la moyenne des frais de livraison
-  const avgFrais = livraisons.length > 0 ? totalFrais / livraisons.length : 0
+  
 
   return (
     <Box sx={{ padding: "24px" }}>
@@ -209,33 +206,9 @@ const ListLivraison = () => {
           </Box>
         </StatCard>
 
-        <StatCard>
-          <StatIcon color="#4caf50">
-            <AttachMoney />
-          </StatIcon>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Frais Moyen
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
-              {formatPrice(avgFrais)} TND
-            </Typography>
-          </Box>
-        </StatCard>
+        
 
-        <StatCard>
-          <StatIcon color="#ff9800">
-            <AttachMoney />
-          </StatIcon>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Total Frais
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
-              {formatPrice(totalFrais)} TND
-            </Typography>
-          </Box>
-        </StatCard>
+        
       </StatsContainer>
 
       <Box sx={{ my: 3 }}>

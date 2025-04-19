@@ -1,11 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useLocation } from "react-router-dom"
-import { fetchProduitsByScategorie, fetchproduits, searchProduits } from "../service/produitservice"
+import {
+  fetchProduitsByScategorie,
+  fetchProduitsByCategorie,
+  fetchproduits,
+  searchProduits,
+} from "../service/produitservice"
 import { fetchscategories } from "../service/scategorieservice"
 import Card from "../components/card/Card"
 import FilterSidebar from "../components/filter/FilterSidebar"
+import FilterSidebarMobile from "../components/filter/FilterSidebarMobile"
+import { Box, Container, Grid, Typography, Skeleton, useMediaQuery, useTheme, Paper, Button } from "@mui/material"
 import "./ProductCard.css"
 
 const ProductsPage = () => {
@@ -14,6 +21,8 @@ const ProductsPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const location = useLocation()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
 
   // Fonction pour trouver une sous-catégorie par son nom
   const findScategorieByName = async (name) => {
@@ -34,7 +43,17 @@ const ProductsPage = () => {
         setLoading(true)
         setError(null)
 
-        if (location.state?.filter === "subcategory") {
+        if (location.state?.filter === "category") {
+          // Nouveau cas: filtrage par catégorie
+          try {
+            const response = await fetchProduitsByCategorie(location.state.id)
+            setAllProducts(response.data)
+            setFilteredProducts(response.data)
+          } catch (err) {
+            console.error("Erreur lors du chargement des produits par catégorie:", err)
+            setError(`Aucun produit trouvé pour la catégorie "${location.state.value}"`)
+          }
+        } else if (location.state?.filter === "subcategory") {
           const scategorie = await findScategorieByName(location.state.value)
           if (scategorie) {
             const response = await fetchProduitsByScategorie(scategorie._id)
@@ -57,6 +76,19 @@ const ProductsPage = () => {
             console.error("Erreur lors de la recherche:", err)
             setError(`Aucun résultat pour "${location.state.value}"`)
           }
+        } else if (location.state?.filter === "promotions") {
+          // Afficher uniquement les produits en promotion
+          try {
+            const response = await fetchproduits()
+            const promoProducts = response.data.filter(
+              (product) => product.prixPromo && product.prixPromo > 0 && product.prixPromo < product.prix,
+            )
+            setAllProducts(promoProducts)
+            setFilteredProducts(promoProducts)
+          } catch (err) {
+            console.error("Erreur lors du chargement des promotions:", err)
+            setError("Erreur de chargement des promotions")
+          }
         } else {
           const response = await fetchproduits()
           setAllProducts(response.data)
@@ -73,80 +105,130 @@ const ProductsPage = () => {
     loadProducts()
   }, [location.state])
 
-  // Gérer les changements de filtre
-  const handleFilterChange = (filteredProducts) => {
-    if (!filteredProducts || filteredProducts.length === allProducts.length) {
-      setFilteredProducts(allProducts)
+  // Gérer les changements de filtre - use memoized callback to prevent infinite loops
+  const handleFilterChange = useCallback((filteredProductsList) => {
+    // Simply set the filtered products that come from the FilterSidebar
+    setFilteredProducts(filteredProductsList)
+  }, [])
+
+  // Titre de la page en fonction du filtre
+  const getPageTitle = () => {
+    if (location.state?.filter === "search") {
+      return `Résultats pour "${location.state.value}"`
+    } else if (location.state?.filter === "promotions") {
+      return "Produits en promotion"
+    } else if (location.state?.filter === "category" || location.state?.filter === "subcategory") {
+      return location.state.value
     } else {
-      setFilteredProducts(filteredProducts)
+      return "Tous les produits"
     }
   }
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Chargement en cours...</p>
-      </div>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={3} lg={2.5} sx={{ display: { xs: "none", md: "block" } }}>
+            <Skeleton variant="rectangular" height={600} sx={{ borderRadius: 2 }} />
+          </Grid>
+          <Grid item xs={12} md={9} lg={9.5}>
+            <Skeleton variant="rectangular" height={60} sx={{ mb: 3, borderRadius: 1 }} />
+            <Grid container spacing={2}>
+              {Array.from(new Array(8)).map((_, index) => (
+                <Grid item xs={6} sm={4} md={4} lg={3} key={index}>
+                  <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 2 }} />
+                </Grid>
+              ))}
+            </Grid>
+          </Grid>
+        </Grid>
+      </Container>
     )
   }
 
   if (error) {
     return (
-      <div className="error-container">
-        <p className="error-message">{error}</p>
-        <button onClick={() => window.location.reload()} className="retry-button">
-          Réessayer
-        </button>
-      </div>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2, bgcolor: "#ffebee" }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            {error}
+          </Typography>
+          <Button variant="contained" color="primary" onClick={() => window.location.reload()} sx={{ mt: 2 }}>
+            Réessayer
+          </Button>
+        </Paper>
+      </Container>
     )
   }
 
   return (
-    <div className="product-page-container">
-      <div className="filter-sidebar-container">
-        <FilterSidebar
-          initialProducts={allProducts}
-          onFilterChange={handleFilterChange}
-          currentSubcategory={location.state?.value}
-        />
-      </div>
+    <Container maxWidth="xl" sx={{ py: 4,bgcolor: "#F2D7FB33" }}>
+      <Grid container spacing={3}>
+        {/* Sidebar pour desktop */}
+        <Grid item xs={12} md={3} lg={2.5} sx={{ display: { xs: "none", md: "block" } }}>
+          <FilterSidebar initialProducts={allProducts} onFilterChange={handleFilterChange} />
+        </Grid>
 
-      <div className="product-list-container">
-        <h2 className="page-title">
-          {location.state?.filter === "search"
-            ? `Résultats pour "${location.state.value}"`
-            : location.state?.value || "Tous les produits"}
-          <span className="product-count">({filteredProducts.length} produits)</span>
-        </h2>
+        {/* Contenu principal */}
+        <Grid item xs={12} md={9} lg={9.5}>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h5" component="h1" gutterBottom>
+              {getPageTitle()}
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {filteredProducts.length} produits trouvés
+            </Typography>
+          </Box>
 
-        {filteredProducts.length > 0 ? (
-          <div className="card-container">
-            {filteredProducts.map((product) => (
-              <Card
-                key={product._id}
-                _id={product._id}
-                imagepro={product.imagepro}
-                title={product.title}
-                description={product.description}
-                prix={product.prix}
-                stock={product.stock}
-                marqueID={product.marqueID}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="no-products">
-            <p>Aucun produit ne correspond à vos filtres</p>
-            <button onClick={() => setFilteredProducts(allProducts)} className="reset-filters-btn">
-              Réinitialiser les filtres
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+          {filteredProducts.length > 0 ? (
+            <Grid container spacing={2}>
+              {filteredProducts.map((pro) => (
+                <Grid item xs={6} sm={4} md={4} lg={3} key={pro._id}>
+                  <Card
+                    _id={pro._id}
+                    imagepro={pro.imagepro}
+                    title={pro.title}
+                    description={pro.description}
+                    prix={pro.prix}
+                    prixPromo={pro.prixPromo}
+                    stock={pro.stock}
+                    marqueID={pro.marqueID}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Paper
+              sx={{
+                p: 4,
+                textAlign: "center",
+                borderRadius: 2,
+                backgroundColor: theme.palette.background.default,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Aucun produit ne correspond à vos filtres
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Essayez de modifier vos critères de filtrage pour voir plus de produits.
+              </Typography>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setFilteredProducts(allProducts)}
+                sx={{ mt: 2 }}
+              >
+                Réinitialiser les filtres
+              </Button>
+            </Paper>
+          )}
+        </Grid>
+      </Grid>
+
+      {/* Sidebar mobile (bouton flottant + drawer) */}
+      <FilterSidebarMobile initialProducts={allProducts} onFilterChange={handleFilterChange} />
+    </Container>
   )
 }
 
 export default ProductsPage
-

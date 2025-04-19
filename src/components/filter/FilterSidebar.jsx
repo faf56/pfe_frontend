@@ -1,157 +1,481 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { fetchmarques } from '../../service/marqueservice';
-import { fetchscategories } from '../../service/scategorieservice';
-import './FilterSidebar.css';
+"use client"
+
+import { useState, useEffect, useMemo, useRef } from "react"
+import { fetchmarques } from "../../service/marqueservice"
+import { fetchscategories } from "../../service/scategorieservice"
+import {
+  Box,
+  Typography,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Divider,
+  Button,
+  Paper,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
+  Skeleton,
+  Badge,
+  styled,
+  useTheme,
+} from "@mui/material"
+import {
+  ExpandMore as ExpandMoreIcon,
+  FilterAlt as FilterIcon,
+  RestartAlt as ResetIcon,
+  BrandingWatermark as BrandIcon,
+  Category as CategoryIcon,
+  Check as CheckIcon,
+} from "@mui/icons-material"
+
+// Styled components
+const FilterPaper = styled(Paper)(({ theme }) => ({
+  width: "100%",
+  padding: theme.spacing(3),
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+  position: "sticky",
+  top: theme.spacing(2),
+}))
+
+const FilterHeader = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: theme.spacing(2),
+}))
+
+const FilterTitle = styled(Typography)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  fontWeight: 600,
+  color: theme.palette.text.primary,
+}))
+
+const FilterAccordion = styled(Accordion)(({ theme }) => ({
+  boxShadow: "none",
+  "&:before": {
+    display: "none",
+  },
+  marginBottom: theme.spacing(1),
+  borderRadius: theme.shape.borderRadius,
+  overflow: "hidden",
+  border: `1px solid ${theme.palette.divider}`,
+}))
+
+const FilterAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
+  padding: theme.spacing(0, 2),
+  "& .MuiAccordionSummary-content": {
+    margin: theme.spacing(1, 0),
+  },
+}))
+
+const FilterAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
+  padding: theme.spacing(1, 2, 2),
+  maxHeight: "250px",
+  overflowY: "auto",
+  "&::-webkit-scrollbar": {
+    width: "6px",
+  },
+  "&::-webkit-scrollbar-track": {
+    background: theme.palette.background.paper,
+  },
+  "&::-webkit-scrollbar-thumb": {
+    background: theme.palette.divider,
+    borderRadius: "3px",
+  },
+}))
+
+const StyledFormControlLabel = styled(FormControlLabel)(({ theme, disabled }) => ({
+  marginLeft: 0,
+  marginRight: 0,
+  width: "100%",
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(0.5, 1),
+  transition: "background-color 0.2s",
+  "&:hover": {
+    backgroundColor: disabled ? "transparent" : theme.palette.action.hover,
+  },
+  "& .MuiFormControlLabel-label": {
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontSize: "0.875rem",
+    color: disabled ? theme.palette.text.disabled : theme.palette.text.primary,
+  },
+}))
+
+const CountChip = styled(Chip)(({ theme, count }) => ({
+  height: "20px",
+  fontSize: "0.75rem",
+  backgroundColor: count > 0 ? theme.palette.primary.main : theme.palette.action.disabledBackground,
+  color: count > 0 ? theme.palette.primary.contrastText : theme.palette.text.disabled,
+  "& .MuiChip-label": {
+    padding: "0 8px",
+  },
+}))
+
+const ResetButton = styled(Button)(({ theme }) => ({
+  textTransform: "none",
+  fontWeight: 500,
+  color: theme.palette.primary.main,
+  "&:hover": {
+    backgroundColor: theme.palette.primary.light + "20",
+  },
+}))
+
+const SelectedFiltersBox = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: theme.spacing(1),
+  marginTop: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+}))
 
 const FilterSidebar = ({ initialProducts, onFilterChange }) => {
-  const [marques, setMarques] = useState([]);
-  const [scategories, setScategories] = useState([]);
-  const [selectedMarques, setSelectedMarques] = useState([]);
-  const [selectedScategories, setSelectedScategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const theme = useTheme()
+  const [marques, setMarques] = useState([])
+  const [scategories, setScategories] = useState([])
+  const [selectedMarques, setSelectedMarques] = useState([])
+  const [selectedScategories, setSelectedScategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState({
+    marques: true,
+    categories: true,
+  })
+
+  // Use refs to prevent infinite loops
+  const prevProductsRef = useRef(initialProducts)
+  const prevFilteredProductsRef = useRef([])
 
   // Chargement des marques et scategories
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const [marquesRes, scategoriesRes] = await Promise.all([
-          fetchmarques(),
-          fetchscategories()
-        ]);
-        setMarques(marquesRes.data);
-        setScategories(scategoriesRes.data);
+        const [marquesRes, scategoriesRes] = await Promise.all([fetchmarques(), fetchscategories()])
+        setMarques(marquesRes.data)
+        setScategories(scategoriesRes.data)
       } catch (error) {
-        console.error("Erreur de chargement des filtres:", error);
+        console.error("Erreur de chargement des filtres:", error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    loadFilters();
-  }, []);
-  useEffect(() => {
-    if (!loading) {
-      const filtered = initialProducts.filter(product => {
-        const marqueMatch = selectedMarques.length === 0 || 
-          (product.marqueID && selectedMarques.includes(product.marqueID._id));
-        const scategorieMatch = selectedScategories.length === 0 || 
-          (product.scategorieID && selectedScategories.includes(product.scategorieID._id));
-        return marqueMatch && scategorieMatch;
-      });
-      onFilterChange(filtered);
     }
-  }, [selectedMarques, selectedScategories, initialProducts, loading, onFilterChange]);
+    loadFilters()
+  }, [])
 
-  const toggleFilter = (type, id) => {
-    if (type === 'marque') {
-      setSelectedMarques(prev => {
-        const newMarques = prev.includes(id) 
-          ? prev.filter(i => i !== id) 
-          : [...prev, id];
-        // Si on a tout décoché, on réinitialise complètement
-        return newMarques.length === 0 ? [] : newMarques;
-      });
-    } else {
-      setSelectedScategories(prev => {
-        const newScategories = prev.includes(id) 
-          ? prev.filter(i => i !== id) 
-          : [...prev, id];
-        return newScategories.length === 0 ? [] : newScategories;
-      });
-    }
-  };
   // Calcul des compteurs
   const counts = useMemo(() => {
-    const marqueCounts = {};
-    const scategorieCounts = {};
+    const marqueCounts = {}
+    const scategorieCounts = {}
 
-    initialProducts.forEach(product => {
+    initialProducts.forEach((product) => {
       if (product.marqueID) {
-        marqueCounts[product.marqueID._id] = (marqueCounts[product.marqueID._id] || 0) + 1;
+        marqueCounts[product.marqueID._id] = (marqueCounts[product.marqueID._id] || 0) + 1
       }
       if (product.scategorieID) {
-        scategorieCounts[product.scategorieID._id] = (scategorieCounts[product.scategorieID._id] || 0) + 1;
+        scategorieCounts[product.scategorieID._id] = (scategorieCounts[product.scategorieID._id] || 0) + 1
       }
-    });
+    })
 
-    return { marques: marqueCounts, scategories: scategorieCounts };
-  }, [initialProducts]);
+    return { marques: marqueCounts, scategories: scategorieCounts }
+  }, [initialProducts])
 
   // Application des filtres
   useEffect(() => {
     if (!loading) {
-      const filtered = initialProducts.filter(product => {
-        const marqueMatch = selectedMarques.length === 0 || 
-          (product.marqueID && selectedMarques.includes(product.marqueID._id));
-        const scategorieMatch = selectedScategories.length === 0 || 
-          (product.scategorieID && selectedScategories.includes(product.scategorieID._id));
-        return marqueMatch && scategorieMatch;
-      });
-      // Vérifier si les produits filtrés sont différents avant d'appeler onFilterChange
-      if (JSON.stringify(filtered) !== JSON.stringify(initialProducts)) {
-        onFilterChange(filtered);
+      const filtered = initialProducts.filter((product) => {
+        const marqueMatch =
+          selectedMarques.length === 0 || (product.marqueID && selectedMarques.includes(product.marqueID._id))
+        const scategorieMatch =
+          selectedScategories.length === 0 ||
+          (product.scategorieID && selectedScategories.includes(product.scategorieID._id))
+        return marqueMatch && scategorieMatch
+      })
+
+      // Compare current filtered products with previous filtered products
+      const currentFilteredJSON = JSON.stringify(filtered)
+      const prevFilteredJSON = JSON.stringify(prevFilteredProductsRef.current)
+
+      // Only update if there's an actual change
+      if (currentFilteredJSON !== prevFilteredJSON) {
+        prevFilteredProductsRef.current = filtered
+        onFilterChange(filtered)
       }
     }
-  }, [selectedMarques, selectedScategories, initialProducts, loading, onFilterChange]);
+  }, [selectedMarques, selectedScategories, initialProducts, loading, onFilterChange])
 
- 
+  // Update prevProductsRef when initialProducts changes
+  useEffect(() => {
+    prevProductsRef.current = initialProducts
+  }, [initialProducts])
+
+  const toggleFilter = (type, id) => {
+    if (type === "marque") {
+      setSelectedMarques((prev) => {
+        const newMarques = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+        // Si on a tout décoché, on réinitialise complètement
+        return newMarques.length === 0 ? [] : newMarques
+      })
+    } else {
+      setSelectedScategories((prev) => {
+        const newScategories = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+        return newScategories.length === 0 ? [] : newScategories
+      })
+    }
+  }
 
   const resetFilters = () => {
-    setSelectedMarques([]);
-    setSelectedScategories([]);
-  };
+    setSelectedMarques([])
+    setSelectedScategories([])
+  }
 
-  if (loading) return <div className="filter-sidebar loading">Chargement...</div>;
+  const handleAccordionChange = (panel) => (event, isExpanded) => {
+    setExpanded({ ...expanded, [panel]: isExpanded })
+  }
+
+  const getSelectedMarqueName = (id) => {
+    const marque = marques.find((m) => m._id === id)
+    return marque ? marque.nommarque : ""
+  }
+
+  const getSelectedCategoryName = (id) => {
+    const category = scategories.find((s) => s._id === id)
+    return category ? category.nomscategorie : ""
+  }
+
+  const removeFilter = (type, id) => {
+    if (type === "marque") {
+      setSelectedMarques((prev) => prev.filter((i) => i !== id))
+    } else {
+      setSelectedScategories((prev) => prev.filter((i) => i !== id))
+    }
+  }
+
+  const hasActiveFilters = selectedMarques.length > 0 || selectedScategories.length > 0
+
+  if (loading) {
+    return (
+      <FilterPaper elevation={3}>
+        <FilterHeader>
+          <Skeleton variant="text" width={150} height={32} />
+          <Skeleton variant="circular" width={24} height={24} />
+        </FilterHeader>
+        <Divider sx={{ mb: 2 }} />
+        {[1, 2].map((i) => (
+          <Box key={i} sx={{ mb: 3 }}>
+            <Skeleton variant="text" width={120} height={24} sx={{ mb: 1 }} />
+            {[1, 2, 3, 4].map((j) => (
+              <Skeleton key={j} variant="rectangular" height={36} sx={{ mb: 1, borderRadius: 1 }} />
+            ))}
+          </Box>
+        ))}
+      </FilterPaper>
+    )
+  }
 
   return (
-    <div className="filter-sidebar">
-      <div className="filter-header">
-        <h3>Filtrer par</h3>
-        {(selectedMarques.length > 0 || selectedScategories.length > 0) && (
-          <button onClick={resetFilters} className="reset-btn">
+    <FilterPaper elevation={3}>
+      <FilterHeader>
+        <FilterTitle variant="h6">
+          <FilterIcon color="primary" />
+          Filtres
+        </FilterTitle>
+        {hasActiveFilters && (
+          <ResetButton startIcon={<ResetIcon />} onClick={resetFilters} size="small">
             Réinitialiser
-          </button>
+          </ResetButton>
         )}
-      </div>
+      </FilterHeader>
+
+      <Divider sx={{ mb: 2 }} />
+
+      {/* Affichage des filtres sélectionnés */}
+      {hasActiveFilters && (
+        <SelectedFiltersBox>
+          {selectedMarques.map((id) => (
+            <Chip
+              key={`selected-marque-${id}`}
+              label={getSelectedMarqueName(id)}
+              onDelete={() => removeFilter("marque", id)}
+              color="primary"
+              variant="outlined"
+              size="small"
+            />
+          ))}
+          {selectedScategories.map((id) => (
+            <Chip
+              key={`selected-category-${id}`}
+              label={getSelectedCategoryName(id)}
+              onDelete={() => removeFilter("category", id)}
+              color="secondary"
+              variant="outlined"
+              size="small"
+            />
+          ))}
+        </SelectedFiltersBox>
+      )}
 
       {/* Filtres par marque */}
-      <div className="filter-group">
-        <h4>Marques</h4>
-        {marques.map(marque => (
-          <div key={marque._id} className={`filter-option ${counts.marques[marque._id] === 0 ? 'disabled' : ''}`}>
-            <input
-              type="checkbox"
-              id={`marque-${marque._id}`}
-              checked={selectedMarques.includes(marque._id)}
-              onChange={() => toggleFilter('marque', marque._id)}
-              disabled={counts.marques[marque._id] === 0}
-            />
-            <label htmlFor={`marque-${marque._id}`}>
-              {marque.nommarque} ({counts.marques[marque._id] || 0})
-            </label>
-          </div>
-        ))}
-      </div>
+      <FilterAccordion expanded={expanded.marques} onChange={handleAccordionChange("marques")}>
+        <FilterAccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <BrandIcon color="primary" fontSize="small" />
+            <Typography variant="subtitle1" fontWeight={500}>
+              Marques
+            </Typography>
+            {selectedMarques.length > 0 && (
+              <Badge badgeContent={selectedMarques.length} color="primary" sx={{ ml: 1 }} />
+            )}
+          </Box>
+        </FilterAccordionSummary>
+        <FilterAccordionDetails>
+          <FormGroup>
+            {marques.map((marque) => {
+              const count = counts.marques[marque._id] || 0
+              const isDisabled = count === 0
+              const isSelected = selectedMarques.includes(marque._id)
+
+              return (
+                <StyledFormControlLabel
+                  key={marque._id}
+                  control={
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={() => toggleFilter("marque", marque._id)}
+                      disabled={isDisabled}
+                      size="small"
+                      color="primary"
+                      icon={
+                        <Box
+                          sx={{ width: 18, height: 18, border: `1px solid ${theme.palette.divider}`, borderRadius: 1 }}
+                        />
+                      }
+                      checkedIcon={
+                        <Box
+                          sx={{
+                            width: 18,
+                            height: 18,
+                            backgroundColor: theme.palette.primary.main,
+                            borderRadius: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <CheckIcon sx={{ fontSize: 14, color: "white" }} />
+                        </Box>
+                      }
+                    />
+                  }
+                  label={
+                    <>
+                      <span>{marque.nommarque}</span>
+                      <CountChip
+                        label={count}
+                        size="small"
+                        count={count}
+                        variant={isSelected ? "filled" : "outlined"}
+                      />
+                    </>
+                  }
+                  disabled={isDisabled}
+                />
+              )
+            })}
+          </FormGroup>
+        </FilterAccordionDetails>
+      </FilterAccordion>
 
       {/* Filtres par sous-catégorie */}
-      <div className="filter-group">
-        <h4>Sous-catégories</h4>
-        {scategories.map(scategorie => (
-          <div key={scategorie._id} className={`filter-option ${counts.scategories[scategorie._id] === 0 ? 'disabled' : ''}`}>
-            <input
-              type="checkbox"
-              id={`scategorie-${scategorie._id}`}
-              checked={selectedScategories.includes(scategorie._id)}
-              onChange={() => toggleFilter('scategorie', scategorie._id)}
-              disabled={counts.scategories[scategorie._id] === 0}
-            />
-            <label htmlFor={`scategorie-${scategorie._id}`}>
-              {scategorie.nomscategorie} ({counts.scategories[scategorie._id] || 0})
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+      <FilterAccordion expanded={expanded.categories} onChange={handleAccordionChange("categories")}>
+        <FilterAccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CategoryIcon color="secondary" fontSize="small" />
+            <Typography variant="subtitle1" fontWeight={500}>
+              Catégories
+            </Typography>
+            {selectedScategories.length > 0 && (
+              <Badge badgeContent={selectedScategories.length} color="secondary" sx={{ ml: 1 }} />
+            )}
+          </Box>
+        </FilterAccordionSummary>
+        <FilterAccordionDetails>
+          <FormGroup>
+            {scategories.map((scategorie) => {
+              const count = counts.scategories[scategorie._id] || 0
+              const isDisabled = count === 0
+              const isSelected = selectedScategories.includes(scategorie._id)
 
-export default FilterSidebar;
+              return (
+                <StyledFormControlLabel
+                  key={scategorie._id}
+                  control={
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={() => toggleFilter("scategorie", scategorie._id)}
+                      disabled={isDisabled}
+                      size="small"
+                      color="secondary"
+                      icon={
+                        <Box
+                          sx={{ width: 18, height: 18, border: `1px solid ${theme.palette.divider}`, borderRadius: 1 }}
+                        />
+                      }
+                      checkedIcon={
+                        <Box
+                          sx={{
+                            width: 18,
+                            height: 18,
+                            backgroundColor: theme.palette.secondary.main,
+                            borderRadius: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <CheckIcon sx={{ fontSize: 14, color: "white" }} />
+                        </Box>
+                      }
+                    />
+                  }
+                  label={
+                    <>
+                      <span>{scategorie.nomscategorie}</span>
+                      <CountChip
+                        label={count}
+                        size="small"
+                        count={count}
+                        variant={isSelected ? "filled" : "outlined"}
+                        color="secondary"
+                      />
+                    </>
+                  }
+                  disabled={isDisabled}
+                />
+              )
+            })}
+          </FormGroup>
+        </FilterAccordionDetails>
+      </FilterAccordion>
+
+      {/* Informations sur les filtres */}
+      <Box sx={{ mt: 3, pt: 2, borderTop: `1px dashed ${theme.palette.divider}` }}>
+        <Typography variant="body2" color="text.secondary" align="center">
+          {initialProducts.length} produits disponibles
+        </Typography>
+        {hasActiveFilters && (
+          <Typography variant="body2" color="primary" align="center" sx={{ mt: 1 }}>
+            {prevFilteredProductsRef.current.length} produits correspondent à vos filtres
+          </Typography>
+        )}
+      </Box>
+    </FilterPaper>
+  )
+}
+
+export default FilterSidebar
