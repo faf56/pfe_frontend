@@ -13,9 +13,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Button
+  Button,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material"
-import { Search, FilterList, Clear } from "@mui/icons-material"
+import { Search, FilterList, Clear, LocalShipping as LocalShippingIcon } from "@mui/icons-material"
 
 const FiltersContainer = styled(Paper)(({ theme }) => ({
   padding: "16px",
@@ -27,13 +29,15 @@ const FiltersContainer = styled(Paper)(({ theme }) => ({
 const OrderFilters = ({ onFilterChange }) => {
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [freeShippingOnly, setFreeShippingOnly] = useState(false)
 
   const handleStatusChange = (event) => {
     const newStatus = event.target.value
     setStatusFilter(newStatus)
     onFilterChange({
       status: newStatus,
-      search: searchTerm
+      search: searchTerm,
+      freeShippingOnly: freeShippingOnly,
     })
   }
 
@@ -41,16 +45,28 @@ const OrderFilters = ({ onFilterChange }) => {
     setSearchTerm(event.target.value)
     onFilterChange({
       status: statusFilter,
-      search: event.target.value
+      search: event.target.value,
+      freeShippingOnly: freeShippingOnly,
+    })
+  }
+
+  const handleFreeShippingChange = (event) => {
+    setFreeShippingOnly(event.target.checked)
+    onFilterChange({
+      status: statusFilter,
+      search: searchTerm,
+      freeShippingOnly: event.target.checked,
     })
   }
 
   const clearFilters = () => {
     setStatusFilter("all")
     setSearchTerm("")
+    setFreeShippingOnly(false)
     onFilterChange({
       status: "all",
-      search: ""
+      search: "",
+      freeShippingOnly: false,
     })
   }
 
@@ -61,13 +77,8 @@ const OrderFilters = ({ onFilterChange }) => {
         <Typography variant="subtitle1" fontWeight={600}>
           Filtres
         </Typography>
-        {(statusFilter !== "all" || searchTerm) && (
-          <Button
-            startIcon={<Clear />}
-            onClick={clearFilters}
-            size="small"
-            sx={{ ml: 'auto' }}
-          >
+        {(statusFilter !== "all" || searchTerm || freeShippingOnly) && (
+          <Button startIcon={<Clear />} onClick={clearFilters} size="small" sx={{ ml: "auto" }}>
             Réinitialiser
           </Button>
         )}
@@ -119,9 +130,21 @@ const OrderFilters = ({ onFilterChange }) => {
             <MenuItem value="annulee">Annulée</MenuItem>
           </Select>
         </FormControl>
+
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={freeShippingOnly}
+              onChange={handleFreeShippingChange}
+              icon={<LocalShippingIcon color="action" />}
+              checkedIcon={<LocalShippingIcon color="success" />}
+            />
+          }
+          label="Livraison gratuite uniquement"
+        />
       </Box>
 
-      {(statusFilter !== "all" || searchTerm) && (
+      {(statusFilter !== "all" || searchTerm || freeShippingOnly) && (
         <Box sx={{ display: "flex", gap: 1, mt: 3, flexWrap: "wrap" }}>
           <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
             Filtres actifs:
@@ -130,17 +153,24 @@ const OrderFilters = ({ onFilterChange }) => {
           {statusFilter !== "all" && (
             <Chip
               label={`Statut: ${
-                statusFilter === 'en_attente' ? 'En attente' :
-                statusFilter === 'confirmee' ? 'Confirmée' :
-                statusFilter === 'en_preparation' ? 'En préparation' :
-                statusFilter === 'expediee' ? 'Expédiée' :
-                statusFilter === 'livree' ? 'Livrée' : 'Annulée'
+                statusFilter === "en_attente"
+                  ? "En attente"
+                  : statusFilter === "confirmee"
+                    ? "Confirmée"
+                    : statusFilter === "en_preparation"
+                      ? "En préparation"
+                      : statusFilter === "expediee"
+                        ? "Expédiée"
+                        : statusFilter === "livree"
+                          ? "Livrée"
+                          : "Annulée"
               }`}
               onDelete={() => {
                 setStatusFilter("all")
                 onFilterChange({
                   status: "all",
-                  search: searchTerm
+                  search: searchTerm,
+                  freeShippingOnly: freeShippingOnly,
                 })
               }}
               size="small"
@@ -155,11 +185,30 @@ const OrderFilters = ({ onFilterChange }) => {
                 setSearchTerm("")
                 onFilterChange({
                   status: statusFilter,
-                  search: ""
+                  search: "",
+                  freeShippingOnly: freeShippingOnly,
                 })
               }}
               size="small"
               variant="outlined"
+            />
+          )}
+
+          {freeShippingOnly && (
+            <Chip
+              icon={<LocalShippingIcon style={{ fontSize: 16 }} />}
+              label="Livraison gratuite uniquement"
+              onDelete={() => {
+                setFreeShippingOnly(false)
+                onFilterChange({
+                  status: statusFilter,
+                  search: searchTerm,
+                  freeShippingOnly: false,
+                })
+              }}
+              size="small"
+              variant="outlined"
+              color="success"
             />
           )}
         </Box>

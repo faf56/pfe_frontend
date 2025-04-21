@@ -503,14 +503,7 @@ const Checkout = () => {
               </RadioGroup>
             </FormControl>
 
-            {!isShippingFree && (
-              <Alert severity="info" sx={{ mt: 3, backgroundColor: "rgba(25, 118, 210, 0.1)", color: "#1976d2" }}>
-                <Typography variant="body2">
-                  Ajoutez {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} TND supplémentaires à votre panier pour
-                  bénéficier de la livraison gratuite !
-                </Typography>
-              </Alert>
-            )}
+            
           </>
         )
       case 2:

@@ -1,4 +1,6 @@
-import { forwardRef } from "react"
+"use client"
+
+import { forwardRef, useEffect } from "react"
 import { Box, Typography, Table, TableBody, TableCell, TableHead, TableRow, Divider, Grid, Paper } from "@mui/material"
 import { styled } from "@mui/material/styles"
 
@@ -24,6 +26,11 @@ const PrintSection = styled(Box)({
 })
 
 const OrderPrintView = forwardRef(({ order }, ref) => {
+  // Ajouter un log pour déboguer
+  useEffect(() => {
+    console.log("OrderPrintView - order:", order)
+  }, [order])
+
   if (!order) return null
 
   // Format date
@@ -39,6 +46,9 @@ const OrderPrintView = forwardRef(({ order }, ref) => {
   const subtotal = order.sousTotal || 0
   const shippingCost = order.fraisLivraison || 0
   const total = order.total || 0
+
+  // Vérifier si la livraison est gratuite
+  const isShippingFree = order.livraisonGratuite || subtotal >= 99
 
   return (
     <div className="print-content">
@@ -165,10 +175,38 @@ const OrderPrintView = forwardRef(({ order }, ref) => {
               <Typography variant="body2">Sous-total:</Typography>
               <Typography variant="body2">{subtotal.toFixed(3)} DT</Typography>
             </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, alignItems: "center" }}>
               <Typography variant="body2">Frais de livraison:</Typography>
-              <Typography variant="body2">{shippingCost.toFixed(3)} DT</Typography>
+              {isShippingFree ? (
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography variant="body2" color="success.main" fontWeight="bold" sx={{ mr: 1 }}>
+                    GRATUIT
+                  </Typography>
+                  {shippingCost > 0 && (
+                    <Typography variant="caption" sx={{ textDecoration: "line-through", color: "text.secondary" }}>
+                      {shippingCost.toFixed(3)} DT
+                    </Typography>
+                  )}
+                </Box>
+              ) : (
+                <Typography variant="body2">{shippingCost.toFixed(3)} DT</Typography>
+              )}
             </Box>
+            {isShippingFree && (
+              <Box
+                sx={{
+                  backgroundColor: "rgba(76, 175, 80, 0.1)",
+                  p: 1,
+                  borderRadius: 1,
+                  mb: 1,
+                  width: "100%",
+                }}
+              >
+                <Typography variant="caption" color="success.main" align="center" sx={{ display: "block" }}>
+                  Livraison gratuite à partir de 99 DT d'achat !
+                </Typography>
+              </Box>
+            )}
             <Divider sx={{ my: 1 }} />
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography variant="subtitle1" fontWeight="bold">

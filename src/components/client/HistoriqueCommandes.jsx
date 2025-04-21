@@ -33,6 +33,9 @@ import {
 } from "@mui/icons-material"
 import { fetchOrdersByUser } from "../../service/orderservice"
 
+// Seuil pour la livraison gratuite
+const FREE_SHIPPING_THRESHOLD = 99
+
 // Fonction pour formater la date
 const formatDate = (dateString) => {
   const options = { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }
@@ -59,6 +62,17 @@ const getStatusColor = (status) => {
   }
 }
 
+// Fonction pour vérifier si la livraison est gratuite
+const isShippingFree = (order) => {
+  // Vérifier si la propriété livraisonGratuite est définie
+  if (order.livraisonGratuite === true) {
+    return true
+  }
+
+  // Vérifier si le sous-total est supérieur ou égal au seuil
+  return order.sousTotal >= FREE_SHIPPING_THRESHOLD
+}
+
 const HistoriqueCommandes = ({ userId }) => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -71,7 +85,17 @@ const HistoriqueCommandes = ({ userId }) => {
       try {
         setLoading(true)
         const response = await fetchOrdersByUser(userId)
-        setOrders(response.data)
+
+        // Ajouter un log pour déboguer
+        console.log("Commandes reçues:", response.data)
+
+        // Enrichir les commandes avec la propriété isShippingFree
+        const enrichedOrders = response.data.map((order) => ({
+          ...order,
+          isShippingFree: isShippingFree(order),
+        }))
+
+        setOrders(enrichedOrders)
       } catch (error) {
         console.error("Erreur lors de la récupération des commandes:", error)
         setError("Impossible de charger vos commandes. Veuillez réessayer plus tard.")
@@ -86,6 +110,7 @@ const HistoriqueCommandes = ({ userId }) => {
   }, [userId])
 
   const handleOpenOrderDetails = (order) => {
+    console.log("Détails de la commande:", order)
     setSelectedOrder(order)
     setOpenDialog(true)
   }
@@ -151,7 +176,20 @@ const HistoriqueCommandes = ({ userId }) => {
                     </Typography>
                   </TableCell>
                   <TableCell>{formatDate(order.createdAt)}</TableCell>
-                  <TableCell>{order.total.toFixed(3)} DT</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                      <Typography variant="body2">{order.total.toFixed(3)} DT</Typography>
+                      {order.isShippingFree && (
+                        <Chip
+                          label="Livraison gratuite"
+                          size="small"
+                          color="success"
+                          sx={{ mt: 0.5, height: 20, fontSize: "0.7rem" }}
+                          icon={<LocalShippingIcon style={{ fontSize: "0.7rem" }} />}
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Chip label={label} color={color} size="small" variant="outlined" />
                   </TableCell>
@@ -246,6 +284,15 @@ const HistoriqueCommandes = ({ userId }) => {
                       </Typography>
                     </Box>
                     <Typography variant="body2">{selectedOrder.livraisonID?.titre || "Livraison standard"}</Typography>
+                    {selectedOrder.isShippingFree && (
+                      <Chip
+                        label="Livraison gratuite"
+                        size="small"
+                        color="success"
+                        sx={{ mt: 1, height: 24 }}
+                        icon={<LocalShippingIcon style={{ fontSize: "0.9rem" }} />}
+                      />
+                    )}
                   </Box>
                 </Grid>
 
@@ -309,7 +356,7 @@ const HistoriqueCommandes = ({ userId }) => {
                             </TableCell>
                             <TableCell align="right">{item.prix.toFixed(3)} DT</TableCell>
                             <TableCell align="right">{item.quantite}</TableCell>
-                            <TableCell align="right">{item.total.toFixed(3)} DT</TableCell>
+                            <TableCell align="right">{(item.prix * item.quantite).toFixed(3)} DT</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -321,10 +368,49 @@ const HistoriqueCommandes = ({ userId }) => {
                       <Typography variant="body1">Sous-total:</Typography>
                       <Typography variant="body1">{selectedOrder.sousTotal.toFixed(3)} DT</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", width: "250px", mb: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        width: "250px",
+                        mb: 1,
+                        alignItems: "center",
+                      }}
+                    >
                       <Typography variant="body1">Frais de livraison:</Typography>
-                      <Typography variant="body1">{selectedOrder.fraisLivraison.toFixed(3)} DT</Typography>
+                      {selectedOrder.isShippingFree ? (
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Typography variant="body1" color="success.main" fontWeight="bold" sx={{ mr: 1 }}>
+                            GRATUIT
+                          </Typography>
+                          {selectedOrder.fraisLivraison > 0 && (
+                            <Typography
+                              variant="caption"
+                              sx={{ textDecoration: "line-through", color: "text.secondary" }}
+                            >
+                              {selectedOrder.fraisLivraison.toFixed(3)} DT
+                            </Typography>
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography variant="body1">{selectedOrder.fraisLivraison.toFixed(3)} DT</Typography>
+                      )}
                     </Box>
+                    {selectedOrder.isShippingFree && (
+                      <Box
+                        sx={{
+                          backgroundColor: "rgba(76, 175, 80, 0.1)",
+                          p: 1,
+                          borderRadius: 1,
+                          mb: 1,
+                          width: "250px",
+                        }}
+                      >
+                        <Typography variant="caption" color="success.main" align="center" sx={{ display: "block" }}>
+                          Livraison gratuite à partir de {FREE_SHIPPING_THRESHOLD} DT d'achat !
+                        </Typography>
+                      </Box>
+                    )}
                     <Box sx={{ display: "flex", justifyContent: "space-between", width: "250px", mb: 1 }}>
                       <Typography variant="body1" fontWeight="bold">
                         Total:

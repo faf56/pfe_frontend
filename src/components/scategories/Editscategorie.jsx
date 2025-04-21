@@ -63,24 +63,28 @@ const SubmitButton = styled(Button)(({ theme }) => ({
 }))
 
 const Editscategorie = ({ show, handleClose, sca, handleUpdateScategorie }) => {
-  const [scategorie, setScategorie] = useState(sca)
+  const [scategorie, setScategorie] = useState({
+    ...sca,
+    categorieID: sca.categorieID?._id || sca.categorieID || ""
+  });
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState(null)
   const [formErrors, setFormErrors] = useState({})
 
   const loadcategories = async () => {
     try {
-      setLoading(true)
-      const res = await fetchcategories()
-      setCategories(res.data)
+      setCategoriesLoading(true);
+      const res = await fetchcategories();
+      setCategories(res.data);
+      setCategoriesLoading(false);
     } catch (error) {
-      console.log("Erreur lors du chargement des catégories : ", error)
-      setError("Erreur lors du chargement des catégories")
-    } finally {
-      setLoading(false)
+      console.log("Erreur lors du chargement des catégories : ", error);
+      setError("Erreur lors du chargement des catégories");
+      setCategoriesLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     loadcategories()
@@ -197,33 +201,46 @@ const Editscategorie = ({ show, handleClose, sca, handleUpdateScategorie }) => {
             sx={{ mb: 3 }}
           />
 
-          <FormSelect fullWidth error={!!formErrors.categorieID}>
-            <InputLabel id="categorie-label">Catégorie</InputLabel>
-            <Select
-              labelId="categorie-label"
-              id="categorieID"
-              name="categorieID"
-              value={scategorie.categorieID || ""}
-              onChange={handleChange}
-              label="Catégorie"
-              disabled={loading}
-              required
-            >
-              <MenuItem value="">
-                <em>Sélectionner une catégorie</em>
+<FormSelect fullWidth error={!!formErrors.categorieID}>
+        <InputLabel id="categorie-label">Catégorie</InputLabel>
+        {categoriesLoading ? (
+          <Select
+            labelId="categorie-label"
+            id="categorieID"
+            name="categorieID"
+            value=""
+            label="Catégorie"
+            disabled
+          >
+            <MenuItem value="">Chargement des catégories...</MenuItem>
+          </Select>
+        ) : (
+          <Select
+            labelId="categorie-label"
+            id="categorieID"
+            name="categorieID"
+            value={scategorie.categorieID || ""}
+            onChange={handleChange}
+            label="Catégorie"
+            disabled={loading}
+            required
+          >
+            <MenuItem value="">
+              <em>Sélectionner une catégorie</em>
+            </MenuItem>
+            {categories.map((cat) => (
+              <MenuItem key={cat._id} value={cat._id}>
+                {cat.nomcategorie}
               </MenuItem>
-              {categories.map((cat) => (
-                <MenuItem key={cat._id} value={cat._id}>
-                  {cat.nomcategorie}
-                </MenuItem>
-              ))}
-            </Select>
-            {formErrors.categorieID && (
-              <Typography variant="caption" color="error">
-                {formErrors.categorieID}
-              </Typography>
-            )}
-          </FormSelect>
+            ))}
+          </Select>
+        )}
+        {formErrors.categorieID && (
+          <Typography variant="caption" color="error">
+            {formErrors.categorieID}
+          </Typography>
+        )}
+      </FormSelect>
         </DialogContent>
 
         <DialogActions

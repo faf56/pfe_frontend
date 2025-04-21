@@ -30,6 +30,7 @@ import {
   CheckCircle as CompletedIcon,
   Cancel as CancelledIcon,
   Inventory as PreparingIcon,
+  LocalShipping as LocalShippingIcon,
 } from "@mui/icons-material"
 import PrintOrderModal from "./PrintOrderModal"
 
@@ -168,6 +169,8 @@ const Afficheorder = ({ orders, onUpdateStatus }) => {
         }),
         customerName: order.userID ? `${order.userID.firstname} ${order.userID.lastname}` : "Anonyme",
         totalAmount: order.total,
+        // Vérifier si la livraison est gratuite
+        isShippingFree: order.livraisonGratuite || order.sousTotal >= 99,
       })),
     [orders],
   )
@@ -259,6 +262,16 @@ const Afficheorder = ({ orders, onUpdateStatus }) => {
                     <Typography variant="body2" fontWeight={500}>
                       {order.totalAmount.toFixed(3)} DT
                     </Typography>
+                    {order.isShippingFree && (
+                      <Chip
+                        icon={<LocalShippingIcon style={{ fontSize: 14 }} />}
+                        label="Livraison gratuite"
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                        sx={{ mt: 0.5, height: 20, fontSize: "0.7rem" }}
+                      />
+                    )}
                   </TableCell>
                   <TableCell>
                     <AvatarGroup max={4}>
@@ -342,4 +355,3 @@ const Afficheorder = ({ orders, onUpdateStatus }) => {
 }
 
 export default Afficheorder
-

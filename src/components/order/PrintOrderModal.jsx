@@ -28,6 +28,7 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
           setLoading(true)
           setError(null)
           const response = await fetchOrderById(orderId)
+          console.log("Commande chargée:", response.data)
           setOrder(response.data)
         } catch (err) {
           console.error("Erreur lors du chargement de la commande:", err)
@@ -52,6 +53,10 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
       alert("Veuillez autoriser les popups pour imprimer la commande.")
       return
     }
+
+    // Vérifier si la livraison est gratuite
+    const subtotal = order.sousTotal || 0
+    const isShippingFree = order.livraisonGratuite || subtotal >= 99
 
     // Simplify the approach to avoid port disconnection issues
     printWindow.document.write(`
@@ -138,6 +143,27 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
             height: 40px;
             margin-right: 10px;
             object-fit: cover;
+          }
+          .free-shipping-box {
+            background-color: rgba(76, 175, 80, 0.1);
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+            text-align: center;
+          }
+          .free-shipping-text {
+            color: #2e7d32;
+            font-size: 0.9em;
+          }
+          .free-shipping-label {
+            color: #2e7d32;
+            font-weight: bold;
+            margin-right: 5px;
+          }
+          .strikethrough {
+            text-decoration: line-through;
+            color: #666;
+            font-size: 0.9em;
           }
           @media print {
             body {
@@ -279,8 +305,30 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
               </div>
               <div class="total-row">
                 <span>Frais de livraison:</span>
-                <span>${order.fraisLivraison?.toFixed(3) || "0.000"} DT</span>
+                ${
+                  isShippingFree
+                    ? `
+                    <span style="display: flex; align-items: center;">
+                      <span class="free-shipping-label">GRATUIT</span>
+                      ${
+                        order.fraisLivraison > 0
+                          ? `<span class="strikethrough">${order.fraisLivraison?.toFixed(3) || "0.000"} DT</span>`
+                          : ""
+                      }
+                    </span>
+                    `
+                    : `<span>${order.fraisLivraison?.toFixed(3) || "0.000"} DT</span>`
+                }
               </div>
+              ${
+                isShippingFree
+                  ? `
+                  <div class="free-shipping-box">
+                    <span class="free-shipping-text">Livraison gratuite à partir de 99 DT d'achat !</span>
+                  </div>
+                  `
+                  : ""
+              }
               <div class="divider" style="margin: 8px 0;"></div>
               <div class="total-row bold">
                 <span>Total:</span>

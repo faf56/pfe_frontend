@@ -1,42 +1,50 @@
 import { IoMdClose } from "react-icons/io";
 import { useNavigate } from 'react-router-dom';
-
+import { IconButton, Button, Divider } from '@mui/material';
+import { ShoppingCart, Payment } from '@mui/icons-material';
 import './cart.css';
-import CartContents from "./CartContents"
+import CartContents from "./CartContents";
 
-const CartDrawer = ({drawerOpen, toggleCartDrawer}) => {
+const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
   const navigate = useNavigate();
   
   const handleCheckout = () => {
-    toggleCartDrawer(); // Fermer le drawer
-    navigate('/checkout'); // Rediriger vers la page de commande
+    toggleCartDrawer();
+    navigate('/checkout');
   };
 
   const handleViewCart = () => {
-    toggleCartDrawer(); // Fermer le drawer
-    navigate('/panier'); // Rediriger vers la page détaillée du panier
+    toggleCartDrawer();
+    navigate('/panier');
   };
 
   return (
     <div className={`cart-drawer ${drawerOpen ? "cart-drawer-open" : "cart-drawer-closed"}`}>
-      {/* Bouton de fermeture */}
       <div className="cart-drawer-header">
-        <button onClick={toggleCartDrawer} className="cart-close-btn">
+        <h2 className="cart-title">Panier</h2>
+        <IconButton 
+          onClick={toggleCartDrawer} 
+          className="cart-close-btn"
+          aria-label="close cart"
+        >
           <IoMdClose className="cart-close-icon" />
-        </button>
+        </IconButton>
       </div>
       
-      {/* cart content with scrolable area */}
       <div className="cart-content">
-        <h2 className="cart-title">Panier</h2>
-        {/* component for cart content*/}
         <CartContents />
       </div>
-      {/* chekout button fixed at the boottom */}
+
       <div className="cart-checkout">
-        <button className="view-cart-btn" onClick={handleViewCart}>Voir le panier</button>
-        <button className="checkout-btn" onClick={handleCheckout}>Finaliser La Commande</button>
-      </div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+    <button className="view-cartpage-btn" onClick={handleViewCart}>
+      <i className="fa-solid fa-cart-shopping"></i> Voir le panier
+    </button>
+    <button className="checkout-btn" onClick={handleCheckout}>
+      <i className="fa-solid fa-circle-dollar-to-slot"></i> Commander
+    </button>
+  </div>
+</div>
     </div>
   );
 };

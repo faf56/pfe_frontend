@@ -163,6 +163,7 @@ const ProductsPage = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4,bgcolor: "#F2D7FB33" }}>
+      
       <Grid container spacing={3}>
         {/* Sidebar pour desktop */}
         <Grid item xs={12} md={3} lg={2.5} sx={{ display: { xs: "none", md: "block" } }}>

@@ -42,8 +42,15 @@ const Listorder = () => {
     try {
       setIsPending(true)
       const ordersRes = await fetchOrders()
-      setOrders(ordersRes.data)
-      setFilteredOrders(ordersRes.data)
+
+      // Ajouter la propriété isShippingFree à chaque commande
+      const ordersWithShippingInfo = ordersRes.data.map((order) => ({
+        ...order,
+        isShippingFree: order.livraisonGratuite || order.sousTotal >= 99,
+      }))
+
+      setOrders(ordersWithShippingInfo)
+      setFilteredOrders(ordersWithShippingInfo)
     } catch (error) {
       console.log(error)
       setError(error)
@@ -59,12 +66,10 @@ const Listorder = () => {
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       await updateOrderStatus(orderId, newStatus)
-      setOrders(orders.map(order =>
-        order._id === orderId ? { ...order, statut: newStatus } : order
-      ))
-      setFilteredOrders(filteredOrders.map(order =>
-        order._id === orderId ? { ...order, statut: newStatus } : order
-      ))
+      setOrders(orders.map((order) => (order._id === orderId ? { ...order, statut: newStatus } : order)))
+      setFilteredOrders(
+        filteredOrders.map((order) => (order._id === orderId ? { ...order, statut: newStatus } : order)),
+      )
     } catch (error) {
       console.log(error)
       alert("Erreur lors de la mise à jour du statut")
@@ -76,13 +81,13 @@ const Listorder = () => {
 
     // Filtrer par statut
     if (filters.status !== "all") {
-      result = result.filter(order => order.statut === filters.status)
+      result = result.filter((order) => order.statut === filters.status)
     }
 
     // Filtrer par date
     if (filters.dateRange) {
       const [startDate, endDate] = filters.dateRange
-      result = result.filter(order => {
+      result = result.filter((order) => {
         const orderDate = new Date(order.createdAt)
         return orderDate >= startDate && orderDate <= endDate
       })
@@ -91,18 +96,24 @@ const Listorder = () => {
     // Recherche par ID ou nom client
     if (filters.search) {
       const searchLower = filters.search.toLowerCase()
-      result = result.filter(order =>
-        order._id.toLowerCase().includes(searchLower) ||
-        (order.userID?.firstname?.toLowerCase()?.includes(searchLower) ?? false) ||
-        (order.userID?.lastname?.toLowerCase()?.includes(searchLower) ?? false)
+      result = result.filter(
+        (order) =>
+          order._id.toLowerCase().includes(searchLower) ||
+          (order.userID?.firstname?.toLowerCase()?.includes(searchLower) ?? false) ||
+          (order.userID?.lastname?.toLowerCase()?.includes(searchLower) ?? false),
       )
+    }
+
+    // Filtrer par livraison gratuite
+    if (filters.freeShippingOnly) {
+      result = result.filter((order) => order.livraisonGratuite || order.sousTotal >= 99)
     }
 
     setFilteredOrders(result)
   }
 
   const handlePrintOrder = (orderId) => {
-    window.open(`/orders/${orderId}/print`, '_blank')
+    window.open(`/orders/${orderId}/print`, "_blank")
   }
 
   return (

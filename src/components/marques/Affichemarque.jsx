@@ -65,11 +65,14 @@ const ActionButton = styled(IconButton)(({ theme, color = "primary" }) => ({
 }))
 
 const BrandImage = styled("img")(({ theme }) => ({
-  width: "200px",
-  height: "100px",
+  maxWidth: 250,
+  maxHeight: 130,
   borderRadius: "8px",
   objectFit: "cover",
   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+  
+   
+  
 }))
 
 const Affichemarque = ({ marques, handleDeleteMarque, handleUpdateMarque }) => {

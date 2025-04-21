@@ -168,7 +168,7 @@ const Header = () => {
                 }
               }}
             >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Fond de teint")}>Fond de teint</NavDropdown.Item>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Base de teint")}>Base de teint</NavDropdown.Item>
               <NavDropdown.Item onClick={() => handleSubcategoryClick("Blush & Highlighter")}>
                 Blush & Highlighter
               </NavDropdown.Item>
@@ -206,11 +206,11 @@ const Header = () => {
                 }
               }}
             >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("rouge à levres")}>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Rouge à levres")}>
                 Rouges à lèvres
               </NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("gloss")}>Gloss</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("crayons levre")}>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Gloss")}>Gloss</NavDropdown.Item>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Crayons levre")}>
                 Crayons à lèvres
               </NavDropdown.Item>
             </NavDropdown>
@@ -227,11 +227,11 @@ const Header = () => {
                 }
               }}
             >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("verni normal")}>Verni normal</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("verni permenent")}>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Verni normal")}>Verni normal</NavDropdown.Item>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Verni permenent")}>
                 Verni permanent
               </NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("accesoires ongles")}>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Accesoires ongles")}>
                 Accessoires ongles
               </NavDropdown.Item>
             </NavDropdown>
@@ -248,9 +248,9 @@ const Header = () => {
                 }
               }}
             >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("shampoing")}>Shampoing</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("soin cheveux")}>Soin cheveux</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("accesoires cheveux")}>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Shampoing")}>Shampoing</NavDropdown.Item>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Soin cheveux")}>Soin cheveux</NavDropdown.Item>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Accesoires cheveux")}>
                 Accessoires
               </NavDropdown.Item>
             </NavDropdown>
@@ -267,10 +267,10 @@ const Header = () => {
                 }
               }}
             >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("soin visage")}>Soin visage</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("soin corps")}>Soin corps</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("parfum & brume")}>
-                Parfum & brume
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Soin visage")}>Soin visage</NavDropdown.Item>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Soin corps")}>Soin corps</NavDropdown.Item>
+              <NavDropdown.Item onClick={() => handleSubcategoryClick("Parfum & Brume")}>
+                Parfum & Brume
               </NavDropdown.Item>
             </NavDropdown>
             <Nav.Link href="/marques">Marques</Nav.Link>
