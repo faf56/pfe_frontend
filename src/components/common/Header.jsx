@@ -10,10 +10,10 @@ import { styled } from "@mui/material/styles"
 import IconButton from "@mui/material/IconButton"
 import Badge from "@mui/material/Badge"
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCartOutlined"
-import EmailIcon from '@mui/icons-material/Email';
+import EmailIcon from "@mui/icons-material/Email"
 import CartDrawer from "../cart/CartDrawer"
 import { useState, useEffect } from "react"
-import { useShoppingCart } from "use-shopping-cart"
+import { useCart } from "react-use-cart"
 import { fetchcategories } from "../../service/categorieservice"
 
 const CartBadge = styled(Badge)(({ theme }) => ({
@@ -36,7 +36,7 @@ const Header = () => {
     setDrawerOpen(!drawerOpen)
   }
 
-  const { cartCount } = useShoppingCart()
+  const { totalItems } = useCart()
 
   // Charger les catégories au chargement du composant
   useEffect(() => {
@@ -96,10 +96,8 @@ const Header = () => {
         <span className="center">
           <i className="fa-solid fa-truck-fast"></i> Livraison gratuite à partir de 99 DT d'achat
         </span>
-        <span className="right" onClick={() => navigate("/contact")} >
-          
-          <EmailIcon/> CONTACT
-          
+        <span className="right" onClick={() => navigate("/contact")}>
+          <EmailIcon /> CONTACT
         </span>
       </div>
 
@@ -137,11 +135,12 @@ const Header = () => {
               onClick={() => navigate("/mon-compte")}
             />
           </div>
+          <IconButton onClick={() => navigate("/favoris")} aria-label="Panier">
           <i className="fa-regular fa-heart fa-xl"></i>
-
+          </IconButton>
           <IconButton onClick={toggleCartDrawer} aria-label="Panier">
             <ShoppingCartIcon fontSize="large" sx={{ color: "black" }} />
-            <CartBadge badgeContent={cartCount} overlap="circular" />
+            <CartBadge badgeContent={totalItems} overlap="circular" />
           </IconButton>
         </div>
       </div>

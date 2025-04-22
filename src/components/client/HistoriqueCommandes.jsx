@@ -89,11 +89,22 @@ const HistoriqueCommandes = ({ userId }) => {
         // Ajouter un log pour déboguer
         console.log("Commandes reçues:", response.data)
 
-        // Enrichir les commandes avec la propriété isShippingFree
-        const enrichedOrders = response.data.map((order) => ({
-          ...order,
-          isShippingFree: isShippingFree(order),
-        }))
+        // Enrichir les commandes avec la propriété isShippingFree et calculer le total correct
+        const enrichedOrders = response.data.map((order) => {
+          const shippingIsFree = isShippingFree(order)
+          let finalTotal = order.sousTotal
+
+          // Si la livraison n'est pas gratuite, ajouter les frais de livraison au total
+          if (!shippingIsFree) {
+            finalTotal += order.fraisLivraison || 0
+          }
+
+          return {
+            ...order,
+            isShippingFree: shippingIsFree,
+            finalTotal: finalTotal,
+          }
+        })
 
         setOrders(enrichedOrders)
       } catch (error) {
@@ -178,7 +189,9 @@ const HistoriqueCommandes = ({ userId }) => {
                   <TableCell>{formatDate(order.createdAt)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                      <Typography variant="body2">{order.total.toFixed(3)} DT</Typography>
+                      <Typography variant="body2">
+                        {order.finalTotal ? order.finalTotal.toFixed(3) : order.total.toFixed(3)} DT
+                      </Typography>
                       {order.isShippingFree && (
                         <Chip
                           label="Livraison gratuite"
@@ -416,7 +429,10 @@ const HistoriqueCommandes = ({ userId }) => {
                         Total:
                       </Typography>
                       <Typography variant="body1" fontWeight="bold">
-                        {selectedOrder.total.toFixed(3)} DT
+                        {selectedOrder.finalTotal
+                          ? selectedOrder.finalTotal.toFixed(3)
+                          : selectedOrder.total.toFixed(3)}{" "}
+                        DT
                       </Typography>
                     </Box>
                   </Box>

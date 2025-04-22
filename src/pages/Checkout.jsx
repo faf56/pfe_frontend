@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { useShoppingCart } from "use-shopping-cart"
+import { useCart } from "react-use-cart"
 import { fetchLivraisons } from "../service/livraisonservice"
 import { addOrder } from "../service/orderservice"
 
@@ -43,7 +43,7 @@ const FREE_SHIPPING_THRESHOLD = 99
 
 const Checkout = () => {
   const navigate = useNavigate()
-  const { cartDetails, clearCart } = useShoppingCart()
+  const { isEmpty, items, cartTotal, emptyCart } = useCart()
 
   // Add this new state and effect to check for authentication
   const [user, setUser] = useState(null)
@@ -88,30 +88,16 @@ const Checkout = () => {
     return "0.000" // Valeur par défaut
   }
 
-  // Calculer le sous-total manuellement à partir des articles du panier
-  const calculateSubtotal = () => {
-    if (!cartDetails) return 0
-
-    return Object.values(cartDetails).reduce((total, item) => {
-      // Vérifier si item.prix existe, sinon utiliser item.price ou 0
-      const itemPrice = item.prix || item.price || 0
-      return total + itemPrice * item.quantity
-    }, 0)
-  }
-
-  // Stocker le sous-total dans une variable
-  const subtotal = calculateSubtotal()
-
   // Vérifier si la livraison est gratuite
-  const isShippingFree = subtotal >= FREE_SHIPPING_THRESHOLD
+  const isShippingFree = cartTotal >= FREE_SHIPPING_THRESHOLD
 
   // Calculer le total (sous-total + frais de livraison)
   const calculateTotal = () => {
     // Si le sous-total est supérieur ou égal à 99 dinars, la livraison est gratuite
     if (isShippingFree) {
-      return subtotal
+      return cartTotal
     }
-    return subtotal + (shippingFrais || 0)
+    return cartTotal + (shippingFrais || 0)
   }
 
   // Récupérer les méthodes de livraison depuis l'API
@@ -126,7 +112,7 @@ const Checkout = () => {
           const initialFrais = response.data[0].frais || 0
           setOriginalShippingFrais(initialFrais)
           // Appliquer la livraison gratuite si le sous-total est >= 99 dinars
-          setShippingFrais(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : initialFrais)
+          setShippingFrais(cartTotal >= FREE_SHIPPING_THRESHOLD ? 0 : initialFrais)
         }
       } catch (err) {
         console.error("Erreur lors du chargement des méthodes de livraison:", err)
@@ -137,15 +123,14 @@ const Checkout = () => {
     }
 
     getShippingMethods()
-  }, [subtotal])
+  }, [cartTotal])
 
   // Vérifier si le panier est vide
   useEffect(() => {
-    const cartItems = Object.values(cartDetails || {})
-    if (cartItems.length === 0 && !success) {
+    if (isEmpty && !success) {
       navigate("/panier")
     }
-  }, [cartDetails, navigate, success])
+  }, [isEmpty, navigate, success])
 
   // Gérer les changements dans le formulaire d'informations de livraison
   const handleShippingInfoChange = (e) => {
@@ -167,7 +152,7 @@ const Checkout = () => {
       const methodFrais = selectedMethod.frais || 0
       setOriginalShippingFrais(methodFrais)
       // Appliquer la livraison gratuite si le sous-total est >= 99 dinars
-      setShippingFrais(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : methodFrais)
+      setShippingFrais(cartTotal >= FREE_SHIPPING_THRESHOLD ? 0 : methodFrais)
     }
   }
 
@@ -256,11 +241,8 @@ const Checkout = () => {
 
       const userData = JSON.parse(userStr)
 
-      // Préparer les articles de la commande
-      const cartItems = Object.values(cartDetails)
-
       // Format products according to the backend schema
-      const produits = cartItems.map((item) => ({
+      const produits = items.map((item) => ({
         produitID: item.id,
         quantite: item.quantity,
         // Prix will be calculated on the server based on whether there's a promo price
@@ -273,7 +255,7 @@ const Checkout = () => {
       const orderData = {
         userID: userData._id, // Add user ID from localStorage
         produits: produits, // Use the correct field name expected by the backend
-        sousTotal: subtotal, // Match the backend field name
+        sousTotal: cartTotal, // Match the backend field name
         methodePaiement: paymentMethod === "cash" ? "comptant_livraison" : "en_ligne", // Match the enum values
         livraisonID: selectedShippingMethod,
         adresseLivraison: {
@@ -297,7 +279,7 @@ const Checkout = () => {
       setOrderNumber(response.data._id || `CMD-${Date.now()}`)
 
       // Vider le panier après une commande réussie
-      clearCart()
+      emptyCart()
 
       // Passer à l'étape de confirmation
       setActiveStep(steps.length - 1)
@@ -502,8 +484,6 @@ const Checkout = () => {
                 )}
               </RadioGroup>
             </FormControl>
-
-            
           </>
         )
       case 2:
@@ -648,36 +628,36 @@ const Checkout = () => {
               <Divider sx={{ my: 2 }} />
 
               {/* Liste des articles */}
-              {Object.values(cartDetails || {}).map((item) => (
+              {items.map((item) => (
                 <Box key={item.id} sx={{ display: "flex", mb: 2 }}>
                   <Box sx={{ width: 60, height: 60, mr: 2, overflow: "hidden" }}>
                     <img
                       src={item.image || "/placeholder.svg"}
-                      alt={item.title || item.name}
+                      alt={item.name}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="body1">{item.title || item.name}</Typography>
+                    <Typography variant="body1">{item.name}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Quantité: {item.quantity}
                     </Typography>
                     {item.hasPromo ? (
                       <Box>
                         <Typography variant="body2" color="error">
-                          {formatPrice(item.prix)} TND
+                          {formatPrice(item.price)} TND
                         </Typography>
                         <Typography variant="caption" sx={{ textDecoration: "line-through", color: "text.secondary" }}>
                           {formatPrice(item.prixOriginal)} TND
                         </Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2">{formatPrice(item.prix)} TND</Typography>
+                      <Typography variant="body2">{formatPrice(item.price)} TND</Typography>
                     )}
                   </Box>
                   <Box>
                     <Typography variant="body2" fontWeight="bold">
-                      {formatPrice(item.prix * item.quantity)} TND
+                      {formatPrice(item.price * item.quantity)} TND
                     </Typography>
                   </Box>
                 </Box>
@@ -688,7 +668,7 @@ const Checkout = () => {
               {/* Sous-total */}
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                 <Typography>Sous-total:</Typography>
-                <Typography>{formatPrice(subtotal)} TND</Typography>
+                <Typography>{formatPrice(cartTotal)} TND</Typography>
               </Box>
 
               {/* Frais de livraison */}
@@ -728,7 +708,7 @@ const Checkout = () => {
                 <Typography variant="h6">
                   {activeStep >= 1 && selectedShippingMethod
                     ? `${formatPrice(calculateTotal())} TND`
-                    : `${formatPrice(subtotal)} TND`}
+                    : `${formatPrice(cartTotal)} TND`}
                 </Typography>
               </Box>
             </Paper>

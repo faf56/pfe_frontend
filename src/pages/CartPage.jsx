@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { useShoppingCart } from "use-shopping-cart"
+import { useCart } from "react-use-cart"
 import { fetchLivraisons } from "../service/livraisonservice"
 
 // Material UI imports
@@ -36,9 +36,7 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer"
 
 const CartPage = () => {
   const navigate = useNavigate()
-  const { cartDetails, removeItem, clearCart, incrementItem, decrementItem, setItemQuantity } = useShoppingCart()
-
-  const cartItems = Object.values(cartDetails)
+  const { isEmpty, items, updateItemQuantity, removeItem, emptyCart, cartTotal } = useCart()
   const [shippingMethods, setShippingMethods] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -61,16 +59,11 @@ const CartPage = () => {
     getShippingMethods()
   }, [])
 
-  // Calculer le sous-total
-  const sousTotal = cartItems.reduce((total, item) => {
-    return total + item.prix * item.quantity
-  }, 0)
-
   // Gérer le changement de quantité directement
   const handleQuantityChange = (id, value) => {
     const quantity = Number.parseInt(value)
     if (isNaN(quantity) || quantity < 1) return
-    setItemQuantity(id, quantity)
+    updateItemQuantity(id, quantity)
   }
 
   // Rediriger vers la page de checkout
@@ -104,7 +97,7 @@ const CartPage = () => {
         Mon Panier
       </Typography>
 
-      {cartItems.length === 0 ? (
+      {isEmpty ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
           <Alert severity="info" sx={{ mb: 2 }}>
             Votre panier est vide
@@ -128,14 +121,14 @@ const CartPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {cartItems.map((item) => (
+                  {items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
                           <Box sx={{ width: 80, height: 80, mr: 2, overflow: "hidden", position: "relative" }}>
                             {item.hasPromo && (
                               <Chip
-                                label={`-${calculateDiscount(item.prixOriginal, item.prix)}%`}
+                                label={`-${calculateDiscount(item.prixOriginal, item.price)}%`}
                                 color="error"
                                 size="small"
                                 sx={{
@@ -150,12 +143,12 @@ const CartPage = () => {
                             )}
                             <img
                               src={item.image || "/placeholder.svg"}
-                              alt={item.title}
+                              alt={item.name}
                               style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             />
                           </Box>
                           <Box>
-                            <Typography variant="subtitle1">{item.title}</Typography>
+                            <Typography variant="subtitle1">{item.name}</Typography>
                             {item.marque && (
                               <Typography variant="body2" color="text.secondary">
                                 {item.marque}
@@ -168,7 +161,7 @@ const CartPage = () => {
                         {item.hasPromo ? (
                           <Box>
                             <Typography variant="body1" color="error.main" fontWeight="bold">
-                              {formatPrice(item.prix)} TND
+                              {formatPrice(item.price)} TND
                             </Typography>
                             <Typography
                               variant="caption"
@@ -179,12 +172,16 @@ const CartPage = () => {
                             </Typography>
                           </Box>
                         ) : (
-                          <Typography>{formatPrice(item.prix)} TND</Typography>
+                          <Typography>{formatPrice(item.price)} TND</Typography>
                         )}
                       </TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <IconButton size="small" onClick={() => decrementItem(item.id)} disabled={item.quantity <= 1}>
+                          <IconButton
+                            size="small"
+                            onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                          >
                             <RemoveIcon fontSize="small" />
                           </IconButton>
 
@@ -200,13 +197,13 @@ const CartPage = () => {
                             sx={{ mx: 1 }}
                           />
 
-                          <IconButton size="small" onClick={() => incrementItem(item.id)}>
+                          <IconButton size="small" onClick={() => updateItemQuantity(item.id, item.quantity + 1)}>
                             <AddIcon fontSize="small" />
                           </IconButton>
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="subtitle2">{formatPrice(item.prix * item.quantity)} TND</Typography>
+                        <Typography variant="subtitle2">{formatPrice(item.price * item.quantity)} TND</Typography>
                       </TableCell>
                       <TableCell align="center">
                         <IconButton color="error" onClick={() => removeItem(item.id)} aria-label="Supprimer">
@@ -220,7 +217,7 @@ const CartPage = () => {
             </TableContainer>
 
             <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between" }}>
-              <Button variant="outlined" color="error" onClick={() => clearCart()} startIcon={<DeleteIcon />}>
+              <Button variant="outlined" color="error" onClick={() => emptyCart()} startIcon={<DeleteIcon />}>
                 Vider le panier
               </Button>
 
@@ -240,13 +237,13 @@ const CartPage = () => {
 
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                 <Typography>
-                  Sous-total ({cartItems.length} article{cartItems.length > 1 ? "s" : ""}):
+                  Sous-total ({items.length} article{items.length > 1 ? "s" : ""}):
                 </Typography>
-                <Typography fontWeight="bold">{formatPrice(sousTotal)} TND</Typography>
+                <Typography fontWeight="bold">{formatPrice(cartTotal)} TND</Typography>
               </Box>
 
               {/* Économies réalisées grâce aux promotions */}
-              {cartItems.some((item) => item.hasPromo) && (
+              {items.some((item) => item.hasPromo) && (
                 <Box
                   sx={{
                     display: "flex",
@@ -264,8 +261,8 @@ const CartPage = () => {
                   </Typography>
                   <Typography fontWeight="bold" color="success.main">
                     {formatPrice(
-                      cartItems.reduce((total, item) => {
-                        return item.hasPromo ? total + (item.prixOriginal - item.prix) * item.quantity : total
+                      items.reduce((total, item) => {
+                        return item.hasPromo ? total + (item.prixOriginal - item.price) * item.quantity : total
                       }, 0),
                     )}{" "}
                     TND
@@ -277,7 +274,7 @@ const CartPage = () => {
 
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
                 <Typography variant="h6">Total estimé:</Typography>
-                <Typography variant="h6">{formatPrice(sousTotal)} TND</Typography>
+                <Typography variant="h6">{formatPrice(cartTotal)} TND</Typography>
               </Box>
 
               <Button variant="contained" color="primary" fullWidth size="large" onClick={handleCheckout}>

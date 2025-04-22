@@ -102,13 +102,7 @@ const Footer = () => {
           {/* Row 3 pour le copyright */}
           <Row className="align-items-center">
             <Col xs={12} sm={6} className="text-center text-sm-left">
-              <p className="mb-0 text-dark">
-                &copy; 2025{" "}
-                <a href="#" className="text-decoration-none">
-                  Perla Coif
-                </a>
-                . All Rights Reserved.
-              </p>
+            <p>&copy; {new Date().getFullYear()} Perla Coif. Tous droits réservés.</p>
             </Col>
 
             {/* Icônes des réseaux sociaux */}

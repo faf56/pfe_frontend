@@ -156,3 +156,12 @@
     max-width: 300px;
   }
 }
+/* card.css */
+.favorite-button {
+  transition: all 0.3s ease;
+}
+
+.favorite-button:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.9) !important;
+}

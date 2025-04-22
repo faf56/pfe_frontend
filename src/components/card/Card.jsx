@@ -1,13 +1,30 @@
 "use client"
 
-import { useShoppingCart } from "use-shopping-cart"
+import { useCart } from "react-use-cart"
 import { useNavigate } from "react-router-dom"
-
+import { useState, useEffect } from "react";
+import { addToFavorites, removeFromFavorites, checkIsFavorite } from "../../service/favoriteService";
 import "./card.css"
+import { Favorite, FavoriteBorder } from "@mui/icons-material";
 
 const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqueID }) => {
-  const { addItem } = useShoppingCart()
+  const { addItem } = useCart()
   const navigate = useNavigate()
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(checkIsFavorite(_id));
+  }, [_id]);
+
+  const toggleFavorite = (e) => {
+    e.stopPropagation();
+    if (isFavorite) {
+      removeFromFavorites(_id);
+    } else {
+      addToFavorites(_id);
+    }
+    setIsFavorite(!isFavorite);
+  };
 
   // Determine which price to use
   const hasPromo = prixPromo !== null && prixPromo !== undefined && prixPromo > 0 && prixPromo < prix
@@ -20,16 +37,15 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
     e.stopPropagation()
 
     const pro = {
+      id: _id, // react-use-cart utilise id comme identifiant unique
       image: imagepro,
-      title: title,
+      name: title, // react-use-cart utilise name au lieu de title
       description,
-      prix: finalPrice, // Use the promotional price if available
-      prixOriginal: prix, // Keep the original price for reference
-      prixPromo: prixPromo, // Store the promo price
-      hasPromo: hasPromo, // Flag to indicate if this is a promotional item
-      quantity: 1,
+      price: finalPrice, // react-use-cart utilise price au lieu de prix
+      prixOriginal: prix, // Garder pour référence
+      prixPromo: prixPromo, // Garder pour référence
+      hasPromo: hasPromo, // Garder pour référence
       qtestock: stock,
-      id: _id, // Utilisez bien _id ici
       marque: marqueID?.nommarque,
     }
 
@@ -52,6 +68,31 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
       }}
       style={{ cursor: "pointer" }}
     >
+      <button 
+        className="favorite-button"
+        onClick={toggleFavorite}
+        style={{
+          position: "absolute",
+          top: "10px",
+          left: "10px",
+          background: "rgba(255, 255, 255, 0.8)",
+          border: "none",
+          borderRadius: "50%",
+          width: "30px",
+          height: "30px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          zIndex: 2,
+        }}
+      >
+        {isFavorite ? (
+          <Favorite style={{ color: "red" }} />
+        ) : (
+          <FavoriteBorder style={{ color: "#666" }} />
+        )}
+      </button>
       {hasPromo && (
         <div
           style={{

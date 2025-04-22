@@ -1,8 +1,11 @@
 "use client"
 
-import { forwardRef, useEffect } from "react"
+import { forwardRef, useEffect, useState } from "react"
 import { Box, Typography, Table, TableBody, TableCell, TableHead, TableRow, Divider, Grid, Paper } from "@mui/material"
 import { styled } from "@mui/material/styles"
+
+// Seuil pour la livraison gratuite
+const FREE_SHIPPING_THRESHOLD = 99
 
 const PrintContainer = styled(Paper)({
   padding: "40px",
@@ -26,9 +29,29 @@ const PrintSection = styled(Box)({
 })
 
 const OrderPrintView = forwardRef(({ order }, ref) => {
-  // Ajouter un log pour déboguer
+  const [isShippingFree, setIsShippingFree] = useState(false)
+  const [finalTotal, setFinalTotal] = useState(0)
+
   useEffect(() => {
-    console.log("OrderPrintView - order:", order)
+    if (order) {
+      // Vérifier si la livraison est gratuite
+      const shippingIsFree = order.livraisonGratuite === true || order.sousTotal >= FREE_SHIPPING_THRESHOLD
+      setIsShippingFree(shippingIsFree)
+
+      // Calculer le total final
+      if (shippingIsFree) {
+        // Si livraison gratuite, le total est égal au sous-total
+        setFinalTotal(order.sousTotal)
+      } else {
+        // Sinon, ajouter les frais de livraison
+        setFinalTotal(order.sousTotal + (order.fraisLivraison || 0))
+      }
+
+      console.log("OrderPrintView - Données de commande:", order)
+      console.log("OrderPrintView - Livraison gratuite:", shippingIsFree)
+      console.log("OrderPrintView - Sous-total:", order.sousTotal)
+      console.log("OrderPrintView - Total calculé:", finalTotal)
+    }
   }, [order])
 
   if (!order) return null
@@ -45,10 +68,6 @@ const OrderPrintView = forwardRef(({ order }, ref) => {
   // Calculate totals
   const subtotal = order.sousTotal || 0
   const shippingCost = order.fraisLivraison || 0
-  const total = order.total || 0
-
-  // Vérifier si la livraison est gratuite
-  const isShippingFree = order.livraisonGratuite || subtotal >= 99
 
   return (
     <div className="print-content">
@@ -203,7 +222,7 @@ const OrderPrintView = forwardRef(({ order }, ref) => {
                 }}
               >
                 <Typography variant="caption" color="success.main" align="center" sx={{ display: "block" }}>
-                  Livraison gratuite à partir de 99 DT d'achat !
+                  Livraison gratuite à partir de {FREE_SHIPPING_THRESHOLD} DT d'achat !
                 </Typography>
               </Box>
             )}
@@ -213,7 +232,7 @@ const OrderPrintView = forwardRef(({ order }, ref) => {
                 Total:
               </Typography>
               <Typography variant="subtitle1" fontWeight="bold">
-                {total.toFixed(3)} DT
+                {finalTotal.toFixed(3)} DT
               </Typography>
             </Box>
           </Box>

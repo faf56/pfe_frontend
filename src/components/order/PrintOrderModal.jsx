@@ -15,6 +15,9 @@ import { Close as CloseIcon, Print as PrintIcon } from "@mui/icons-material"
 import OrderPrintView from "./OrderPrintView"
 import { fetchOrderById } from "../../service/orderservice"
 
+// Seuil pour la livraison gratuite
+const FREE_SHIPPING_THRESHOLD = 99
+
 const PrintOrderModal = ({ open, onClose, orderId }) => {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -28,8 +31,26 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
           setLoading(true)
           setError(null)
           const response = await fetchOrderById(orderId)
-          console.log("Commande chargée:", response.data)
-          setOrder(response.data)
+
+          // Vérifier si la livraison est gratuite
+          const isShippingFree =
+            response.data.livraisonGratuite === true || response.data.sousTotal >= FREE_SHIPPING_THRESHOLD
+
+          // Calculer le total final
+          let finalTotal = response.data.sousTotal
+          if (!isShippingFree) {
+            finalTotal += response.data.fraisLivraison || 0
+          }
+
+          // Enrichir l'objet commande avec ces informations
+          const enrichedOrder = {
+            ...response.data,
+            isShippingFree,
+            finalTotal,
+          }
+
+          console.log("PrintOrderModal - Commande chargée:", enrichedOrder)
+          setOrder(enrichedOrder)
         } catch (err) {
           console.error("Erreur lors du chargement de la commande:", err)
           setError("Impossible de charger les détails de la commande")
@@ -55,8 +76,7 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
     }
 
     // Vérifier si la livraison est gratuite
-    const subtotal = order.sousTotal || 0
-    const isShippingFree = order.livraisonGratuite || subtotal >= 99
+    const isShippingFree = order.isShippingFree
 
     // Simplify the approach to avoid port disconnection issues
     printWindow.document.write(`
@@ -324,7 +344,7 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
                 isShippingFree
                   ? `
                   <div class="free-shipping-box">
-                    <span class="free-shipping-text">Livraison gratuite à partir de 99 DT d'achat !</span>
+                    <span class="free-shipping-text">Livraison gratuite à partir de ${FREE_SHIPPING_THRESHOLD} DT d'achat !</span>
                   </div>
                   `
                   : ""
@@ -332,7 +352,7 @@ const PrintOrderModal = ({ open, onClose, orderId }) => {
               <div class="divider" style="margin: 8px 0;"></div>
               <div class="total-row bold">
                 <span>Total:</span>
-                <span>${order.total?.toFixed(3) || "0.000"} DT</span>
+                <span>${order.finalTotal?.toFixed(3) || order.total?.toFixed(3) || "0.000"} DT</span>
               </div>
             </div>
           </div>

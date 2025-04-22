@@ -2,17 +2,36 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom"
-import { useShoppingCart } from "use-shopping-cart"
+import { useCart } from "react-use-cart"
 import { fetchproduitById, fetchProduitsByCategorie } from "../service/produitservice"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import CancelIcon from "@mui/icons-material/Cancel"
 import LocalOfferIcon from "@mui/icons-material/LocalOffer"
 import Card from "../components/card/Card"
 import { Row, Col, Carousel } from "react-bootstrap"
+import { addToFavorites, removeFromFavorites, checkIsFavorite } from "../service/favoriteService";
+
 
 // Material UI imports
 import {
-  Box,Button,Breadcrumbs,Container,Divider,Grid,IconButton,Paper,Rating,Skeleton,Typography,TextField,Alert,Snackbar,Tabs,Tab,Chip,Link,
+  Box,
+  Button,
+  Breadcrumbs,
+  Container,
+  Divider,
+  Grid,
+  IconButton,
+  Paper,
+  Rating,
+  Skeleton,
+  Typography,
+  TextField,
+  Alert,
+  Snackbar,
+  Tabs,
+  Tab,
+  Chip,
+  Link,
 } from "@mui/material"
 
 // Icons
@@ -44,9 +63,8 @@ function TabPanel(props) {
 
 const ProductDetail = () => {
   const { id } = useParams()
-  //console.log("ID depuis useParams:", id)
   const navigate = useNavigate()
-  const { addItem, cartDetails, setItemQuantity } = useShoppingCart()
+  const { addItem, getItem, updateItemQuantity } = useCart()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -55,28 +73,30 @@ const ProductDetail = () => {
   const [similarProducts, setSimilarProducts] = useState([])
   const [loadingSimilar, setLoadingSimilar] = useState(false)
 
-  const cartItem = cartDetails[id] || null
+  const cartItem = getItem(id)
   const [quantity, setQuantity] = useState(cartItem ? cartItem.quantity : 1)
+  const [isFavorite, setIsFavorite] = useState(false);
 
   // Charger les détails du produit
   useEffect(() => {
-    if (!id) return;
-  
+    if (!id) return
+
     const fetchProductDetails = async () => {
       try {
-        setLoading(true);
-        const response = await fetchproduitById(id);
+        setLoading(true)
+        const response = await fetchproduitById(id)
         console.log("Réponse API:", response.data)
-        setProduct(response.data);
-  
+        setProduct(response.data)
+
         // Synchronisation stricte avec le panier
-        if (cartDetails[id]) {
-          setQuantity(cartDetails[id].quantity); // Prend la quantité du panier
+        const existingItem = getItem(id)
+        if (existingItem) {
+          setQuantity(existingItem.quantity) // Prend la quantité du panier
         } else {
-          setQuantity(1); // Réinitialise à 1 si absent du panier
+          setQuantity(1) // Réinitialise à 1 si absent du panier
         }
-      // Récupérer les produits similaires si le produit a une catégorie
-        // Vérifier d'abord si le produit a une catégorie principale (categorieID)
+
+        // Récupérer les produits similaires si le produit a une catégorie
         if (response.data.categorieID?._id) {
           fetchSimilarProductsData(response.data.categorieID._id, response.data._id)
         }
@@ -84,18 +104,30 @@ const ProductDetail = () => {
         else if (response.data.scategorieID?.categorieID?._id) {
           fetchSimilarProductsData(response.data.scategorieID.categorieID._id, response.data._id)
         }
-      
-        // ... (reste du code)
       } catch (err) {
-        setError("Erreur de chargement");
+        setError("Erreur de chargement")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-  
-    fetchProductDetails();
-  }, [id, cartDetails]); // cartDetails dans les dépendances
+    }
 
+    fetchProductDetails()
+  }, [id, getItem])
+
+  useEffect(() => {
+    if (product?._id) {
+      setIsFavorite(checkIsFavorite(product._id));
+    }
+  }, [product?._id]);
+
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      removeFromFavorites(product._id);
+    } else {
+      addToFavorites(product._id);
+    }
+    setIsFavorite(!isFavorite);
+  };
   // Fonction pour récupérer les produits similaires
   const fetchSimilarProductsData = async (categoryId, productId) => {
     if (!categoryId) return
@@ -118,15 +150,16 @@ const ProductDetail = () => {
 
   // Gérer le changement de quantité
   const handleQuantityChange = (e) => {
-    const value = e.target.value;
-    const newQuantity = parseInt(value, 10);
-  
+    const value = e.target.value
+    const newQuantity = Number.parseInt(value, 10)
+
     if (!isNaN(newQuantity) && newQuantity >= 1 && newQuantity <= product.stock) {
-      setQuantity(newQuantity);
+      setQuantity(newQuantity)
     } else if (value === "") {
-      setQuantity(1); // Valeur par défaut si champ vide
+      setQuantity(1) // Valeur par défaut si champ vide
     }
-  };
+  }
+
   // Incrémenter la quantité
   const incrementQuantity = () => {
     if (quantity < product.stock) {
@@ -154,26 +187,26 @@ const ProductDetail = () => {
 
   // Ajouter au panier
   const handleAddToCart = (e) => {
-    e.preventDefault(); // Empêche le rechargement
-    if (!product) return;
-  
+    e.preventDefault() // Empêche le rechargement
+    if (!product) return
+
     // Créez un objet cartItem avec la quantité actuelle
     const cartItem = {
       id: product._id,
-      title: product.title,
-      prix: Number(finalPrice), // Utiliser le prix promotionnel si disponible
-      prixOriginal: Number(product.prix), // Garder le prix original pour référence
+      name: product.title, // react-use-cart utilise name au lieu de title
+      price: Number(finalPrice), // react-use-cart utilise price au lieu de prix
+      prixOriginal: Number(product.prix), // Garder pour référence
       prixPromo: hasPromo ? Number(product.prixPromo) : null,
       hasPromo: hasPromo,
       image: product.imagepro,
       marque: product.marqueID?.nommarque,
-      quantity: quantity, // Utilise la quantité actuelle
-    };
-  
+      qtestock: product.stock,
+    }
+
     // Ajoutez l'article avec la quantité correcte
-    addItem(cartItem, { count: quantity }); // Force la quantité
-    setSnackbarOpen(true);
-  };
+    addItem(cartItem, quantity)
+    setSnackbarOpen(true)
+  }
 
   // Gérer le changement d'onglet
   const handleTabChange = (event, newValue) => {
@@ -216,12 +249,7 @@ const ProductDetail = () => {
             Accueil
           </Link>
           {product?.scategorieID?.nomscategorie && (
-            <Link
-              component={RouterLink}
-              to={`/product/${product.scategorieID._id}`}
-              underline="hover"
-              color="inherit"
-            >
+            <Link component={RouterLink} to={`/product/${product.scategorieID._id}`} underline="hover" color="inherit">
               {product.scategorieID.nomscategorie}
             </Link>
           )}
@@ -390,22 +418,22 @@ const ProductDetail = () => {
                         </IconButton>
 
                         <TextField
-  size="small"
-  value={quantity}
-  onChange={handleQuantityChange}
-  type="number"
-  inputProps={{
-    min: 1,
-    max: product.stock,
-    style: { textAlign: "center", width: "60px" },
-  }}
-  onBlur={() => {
-    if (quantity < 1) setQuantity(1);
-    if (quantity > product.stock) setQuantity(product.stock);
-  }}
-  variant="outlined"
-  sx={{ mx: 1 }}
-/>
+                          size="small"
+                          value={quantity}
+                          onChange={handleQuantityChange}
+                          type="number"
+                          inputProps={{
+                            min: 1,
+                            max: product.stock,
+                            style: { textAlign: "center", width: "60px" },
+                          }}
+                          onBlur={() => {
+                            if (quantity < 1) setQuantity(1)
+                            if (quantity > product.stock) setQuantity(product.stock)
+                          }}
+                          variant="outlined"
+                          sx={{ mx: 1 }}
+                        />
 
                         <IconButton size="small" onClick={incrementQuantity} disabled={quantity >= product.stock}>
                           <AddIcon />
@@ -427,9 +455,13 @@ const ProductDetail = () => {
                       Ajouter au panier
                     </Button>
 
-                    <IconButton color="secondary" aria-label="Ajouter aux favoris">
-                      <FavoriteIcon />
-                    </IconButton>
+                    <IconButton 
+  color={isFavorite ? "error" : "default"} 
+  aria-label="Ajouter aux favoris"
+  onClick={toggleFavorite}
+>
+   <FavoriteIcon />   {/* Modifiez ici */}
+</IconButton>
 
                     <IconButton color="primary" aria-label="Partager">
                       <ShareIcon />
@@ -565,46 +597,43 @@ const ProductDetail = () => {
       </Container>
 
       {/* Section des produits de la même catégorie */}
-      
-      {/* Section des produits de la même catégorie */}
-<div className="memcategorie-container">
-  <h2 className="title">Produit Meme Categorie</h2>
+      <div className="memcategorie-container">
+        <h2 className="title">Produit Meme Categorie</h2>
 
-  {loadingSimilar ? (
-    <div className="loading-container">
-      <div className="spinner"></div>
-      <p>Chargement des produits similaires...</p>
-    </div>
-  ) : similarProducts.length === 0 ? (
-    <div className="no-products">
-      <p>Aucun autre produit dans cette catégorie pour le moment</p>
-    </div>
-  ) : (
-    <Carousel indicators={false} interval={3000}>
-      {similarProductChunks.map((chunk, index) => (
-        <Carousel.Item key={index}>
-          <Row className="card-container display-center">
-            {chunk.map((pro) => (
-              <Col key={pro._id}>
-                <Card
-                  _id={pro._id}
-                  imagepro={pro.imagepro}
-                  title={pro.title}
-                  description={pro.description}
-                  prix={pro.prix}
-                  prixPromo={pro.prixPromo}
-                  stock={pro.stock}
-                  marqueID={pro.marqueID}
-                />
-              </Col>
+        {loadingSimilar ? (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Chargement des produits similaires...</p>
+          </div>
+        ) : similarProducts.length === 0 ? (
+          <div className="no-products">
+            <p>Aucun autre produit dans cette catégorie pour le moment</p>
+          </div>
+        ) : (
+          <Carousel indicators={false} interval={3000}>
+            {similarProductChunks.map((chunk, index) => (
+              <Carousel.Item key={index}>
+                <Row className="card-container display-center">
+                  {chunk.map((pro) => (
+                    <Col key={pro._id}>
+                      <Card
+                        _id={pro._id}
+                        imagepro={pro.imagepro}
+                        title={pro.title}
+                        description={pro.description}
+                        prix={pro.prix}
+                        prixPromo={pro.prixPromo}
+                        stock={pro.stock}
+                        marqueID={pro.marqueID}
+                      />
+                    </Col>
+                  ))}
+                </Row>
+              </Carousel.Item>
             ))}
-          </Row>
-        </Carousel.Item>
-      ))}
-    </Carousel>
-  )}
-</div>
-
+          </Carousel>
+        )}
+      </div>
     </>
   )
 }
