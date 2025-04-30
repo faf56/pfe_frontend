@@ -51,38 +51,44 @@ const Register = () => {
  const [sexe, setSexe] = useState("")
  const [error, setError] = useState("")
 
+ // Modifiez la fonction handleSubmit dans Register.jsx
  const handleSubmit = async (e) => {
-   e.preventDefault()
-   setError("")
+  e.preventDefault();
+  setError("");
 
-   if (password !== password2) {
-     setError("Les mots de passe ne correspondent pas")
-     return
-   }
+  if (password !== password2) {
+    setError("Les mots de passe ne correspondent pas");
+    return;
+  }
 
-   const userData = {
-     firstname,
-     lastname,
-     email,
-     password,
-     telephone: telephone ? Number(telephone) : undefined,
-     userVille,
-     sexe,
-   }
+  const userData = {
+    firstname,
+    lastname,
+    email,
+    password,
+    telephone: telephone ? Number(telephone) : undefined,
+    userVille,
+    sexe,
+  };
 
-   try {
-     const response = await signup(userData)
-     if (response.data.success) {
-       alert("Inscription réussie! Veuillez vous connecter.")
-       navigate("/login")
-     } else {
-       setError(response.data.message || "Échec de l'inscription. Veuillez réessayer.")
-     }
-   } catch (err) {
-     console.error(err)
-     setError(err.response?.data?.message || "Une erreur s'est produite lors de l'inscription.")
-   }
- }
+  try {
+    const response = await signup(userData);
+    if (response.data.success) {
+      alert(response.data.message); // Affiche le message retourné par le serveur
+      navigate("/login");
+    } else {
+      setError(response.data.message || "Échec de l'inscription. Veuillez réessayer.");
+    }
+  } catch (err) {
+    if (err.response?.status === 409) {
+      setError(err.response.data.message);
+    } else if (err.response?.data?.errors) {
+      setError(err.response.data.errors.join(", "));
+    } else {
+      setError(err.response?.data?.message || "Une erreur s'est produite lors de l'inscription.");
+    }
+  }
+};
 
  const handleClose = () => {
    navigate("/")

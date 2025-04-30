@@ -88,7 +88,7 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
         }}
       >
         {isFavorite ? (
-          <Favorite style={{ color: "red" }} />
+          <Favorite style={{ color: "#FC6A80FF" }} />
         ) : (
           <FavoriteBorder style={{ color: "#666" }} />
         )}

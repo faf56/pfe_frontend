@@ -21,7 +21,6 @@ import {
   Alert,
 } from "@mui/material"
 import { LocationOn, Phone, Email, AccessTime, NavigateNext } from "@mui/icons-material"
-import ReCAPTCHA from "react-google-recaptcha"
 import { sendContactMessage } from "../../service/contactservice"
 import { fetchOrders } from "../../service/orderservice" // Importez votre service de commandes
 
@@ -35,7 +34,7 @@ export default function ContactForm() {
     message: "",
   })
   const [file, setFile] = useState(null)
-  const [captchaValue, setCaptchaValue] = useState(null)
+  
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState({
@@ -110,9 +109,7 @@ export default function ContactForm() {
     }
   };
 
-  const handleCaptchaChange = (value) => {
-    setCaptchaValue(value)
-  }
+  
 
   const validateForm = () => {
     const newErrors = {}
@@ -127,9 +124,7 @@ export default function ContactForm() {
       newErrors.message = "Le message est requis"
     }
 
-    if (!captchaValue) {
-      newErrors.captcha = "Veuillez confirmer que vous n'êtes pas un robot"
-    }
+    
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -137,13 +132,13 @@ export default function ContactForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
+  
     if (!validateForm()) {
       return
     }
-
+  
     setLoading(true)
-
+  
     try {
       // Créer un FormData pour envoyer le fichier
       const formDataToSend = new FormData()
@@ -151,22 +146,21 @@ export default function ContactForm() {
       formDataToSend.append("email", formData.email)
       formDataToSend.append("orderRef", formData.orderRef)
       formDataToSend.append("message", formData.message)
-      formDataToSend.append("captcha", captchaValue || "")
-
+  
       if (file) {
         formDataToSend.append("attachment", file);
       }
-
+  
       // Utiliser le service pour envoyer le message
       const response = await sendContactMessage(formDataToSend)
-
+  
       if (response.data.success) {
         setNotification({
           open: true,
           message: "Votre message a été envoyé avec succès! Nous vous répondrons dans les plus brefs délais.",
           severity: "success",
         })
-
+  
         // Réinitialiser le formulaire
         setFormData({
           subject: "Service client",
@@ -175,13 +169,6 @@ export default function ContactForm() {
           message: "",
         })
         setFile(null)
-        setCaptchaValue(null)
-
-        // Réinitialiser le captcha
-        const recaptchaElement = document.querySelector('iframe[src*="recaptcha"]')
-        if (recaptchaElement && recaptchaElement.parentElement) {
-          recaptchaElement.parentElement.innerHTML = recaptchaElement.parentElement.innerHTML
-        }
       } else {
         throw new Error(response.data.message || "Une erreur est survenue")
       }
@@ -212,7 +199,7 @@ export default function ContactForm() {
       </Breadcrumbs>
 
       <Typography variant="h4" component="h1" align="center" gutterBottom sx={{ mb: 5, fontWeight: 600 }}>
-        CONTACTEZ-NOUS
+        Contacter Nous ?
       </Typography>
 
       <Grid container spacing={4}>
@@ -378,19 +365,7 @@ export default function ContactForm() {
                   />
                 </Grid>
 
-                <Grid item xs={12}>
-                  <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-                    <ReCAPTCHA
-                      sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Clé de test, remplacer par votre clé réelle
-                      onChange={handleCaptchaChange}
-                    />
-                  </Box>
-                  {errors.captcha && (
-                    <Typography color="error" variant="caption" align="center" display="block">
-                      {errors.captcha}
-                    </Typography>
-                  )}
-                </Grid>
+                
 
                 <Grid item xs={12} sx={{ display: "flex", justifyContent: "center" }}>
                   <Button

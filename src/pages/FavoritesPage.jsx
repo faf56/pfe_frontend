@@ -88,11 +88,7 @@ const FavoritesPage = () => {
           Mes Produits Favoris
         </Typography>
 
-        {favorites.length > 0 && (
-          <Button variant="outlined" color="error" onClick={handleClearFavorites} className="clear-favorites">
-            Vider mes favoris
-          </Button>
-        )}
+        
       </Box>
 
       {loading ? (
@@ -129,6 +125,11 @@ const FavoritesPage = () => {
   ))}
 </Grid>
       )}
+      {favorites.length > 0 && (
+          <Button variant="outlined" color="error" onClick={handleClearFavorites} className="clear-favorites">
+            Vider mes favoris
+          </Button>
+        )}
     </Container>
   )
 }

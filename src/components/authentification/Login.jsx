@@ -14,31 +14,48 @@ const Login = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const handleSubmit=(event)=>{
-    event.preventDefault();
-    const objetuser = {
+
+  // Modifiez la fonction handleSubmit dans Login.jsx
+const handleSubmit = (event) => {
+  event.preventDefault();
+  const objetuser = {
     email: email,
-    password :password,
-    };
-    signin(objetuser).then((result)=>{
-    console.log(result.data.success)
-    console.log(result.data.token)
-    console.log(result.data.user)
-    if (result.data.success){
-    if(result.data.user.isActive){
-    localStorage.setItem("CC_Token",result.data.token)
-    localStorage.setItem("user",JSON.stringify(result.data.user))
-    localStorage.setItem("refresh_token",result.data.refreshToken)
-    if (result.data.user.role==="admin") navigate('/admin')
-    else navigate('/mon-compte')
-    }
-    else alert ("Compte n'est pas encore activé")
-    }
-    
-    else alert("Erreur ! ")
+    password: password,
+  };
+  
+  signin(objetuser)
+    .then((result) => {
+      if (result.data.success) {
+        if (result.data.user.isActive) {
+          localStorage.setItem("CC_Token", result.data.token);
+          localStorage.setItem("user", JSON.stringify(result.data.user));
+          if (result.data.user.role === "admin") {
+            navigate('/admin');
+          } else {
+            navigate('/mon-compte');
+          }
+        } else {
+          alert(`
+            Votre compte n'est pas encore activé.
+            Un email d'activation a été envoyé lors de votre inscription.
+            Veuillez vérifier votre boîte mail ou contacter l'administrateur.
+          `);
+        }
+      } else {
+        alert("Identifiants incorrects. Veuillez réessayer.");
+      }
     })
-    .catch((error)=>{alert("Error");console.log(error)})
-    };
+    .catch((error) => {
+      if (error.response?.data?.message === "Account doesn't exists") {
+        alert("Aucun compte trouvé avec cet email. Veuillez vous inscrire.");
+      } else if (error.response?.data?.message === "Please verify your credentials") {
+        alert("Email ou mot de passe incorrect. Veuillez réessayer.");
+      } else {
+        alert("Une erreur s'est produite lors de la connexion.");
+        console.error(error);
+      }
+    });
+};
 
   const handleClose = () => {
     navigate("/");

@@ -36,7 +36,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import LocalShippingIcon from "@mui/icons-material/LocalShipping"
 
 // Étapes du processus de commande
-const steps = ["Informations de livraison", "Méthode de livraison", "Paiement", "Confirmation"]
+const steps = ["Méthode de livraison", "Informations de livraison", "Paiement", "Confirmation"]
 
 // Seuil pour la livraison gratuite
 const FREE_SHIPPING_THRESHOLD = 99
@@ -50,13 +50,12 @@ const Checkout = () => {
 
   const [activeStep, setActiveStep] = useState(0)
   const [shippingInfo, setShippingInfo] = useState({
-    nom: "",
-    prenom: "",
+    
     adresse: "",
     ville: "",
     codePostal: "",
     telephone: "",
-    email: "",
+    
   })
   const [shippingMethods, setShippingMethods] = useState([])
   const [selectedShippingMethod, setSelectedShippingMethod] = useState("")
@@ -163,19 +162,14 @@ const Checkout = () => {
 
   // Valider les informations de livraison
   const validateShippingInfo = () => {
-    const { nom, prenom, adresse, ville, codePostal, telephone, email } = shippingInfo
+    const {  adresse, ville, codePostal, telephone } = shippingInfo
 
-    if (!nom || !prenom || !adresse || !ville || !codePostal || !telephone || !email) {
+    if (!adresse || !ville || !codePostal || !telephone ) {
       setError("Veuillez remplir tous les champs obligatoires")
       return false
     }
 
-    // Validation simple de l'email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      setError("Veuillez entrer une adresse email valide")
-      return false
-    }
+    
 
     // Validation simple du téléphone (8 chiffres pour la Tunisie)
     const phoneRegex = /^\d{8}$/
@@ -197,12 +191,12 @@ const Checkout = () => {
 
   // Passer à l'étape suivante
   const handleNext = () => {
-    if (activeStep === 0 && !validateShippingInfo()) {
+    if (activeStep === 0 && !selectedShippingMethod) {
+      setError("Veuillez sélectionner une méthode de livraison")
       return
     }
 
-    if (activeStep === 1 && !selectedShippingMethod) {
-      setError("Veuillez sélectionner une méthode de livraison")
+    if (activeStep === 1 && !validateShippingInfo()) {
       return
     }
 
@@ -311,95 +305,6 @@ const Checkout = () => {
     switch (step) {
       case 0:
         return (
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="prenom"
-                name="prenom"
-                label="Prénom"
-                fullWidth
-                variant="outlined"
-                value={shippingInfo.prenom}
-                onChange={handleShippingInfoChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="nom"
-                name="nom"
-                label="Nom"
-                fullWidth
-                variant="outlined"
-                value={shippingInfo.nom}
-                onChange={handleShippingInfoChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                required
-                id="adresse"
-                name="adresse"
-                label="Adresse"
-                fullWidth
-                variant="outlined"
-                value={shippingInfo.adresse}
-                onChange={handleShippingInfoChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="ville"
-                name="ville"
-                label="Ville"
-                fullWidth
-                variant="outlined"
-                value={shippingInfo.ville}
-                onChange={handleShippingInfoChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="codePostal"
-                name="codePostal"
-                label="Code postal"
-                fullWidth
-                variant="outlined"
-                value={shippingInfo.codePostal}
-                onChange={handleShippingInfoChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="telephone"
-                name="telephone"
-                label="Téléphone"
-                fullWidth
-                variant="outlined"
-                value={shippingInfo.telephone}
-                onChange={handleShippingInfoChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                id="email"
-                name="email"
-                label="Email"
-                fullWidth
-                variant="outlined"
-                value={shippingInfo.email}
-                onChange={handleShippingInfoChange}
-              />
-            </Grid>
-          </Grid>
-        )
-      case 1:
-        return (
           <>
             {/* Alerte de livraison gratuite */}
             {isShippingFree && (
@@ -486,6 +391,63 @@ const Checkout = () => {
             </FormControl>
           </>
         )
+        
+      case 1:
+        return (
+          <Grid container spacing={3}>
+            
+            
+            <Grid item xs={12}>
+              <TextField
+                required
+                id="adresse"
+                name="adresse"
+                label="Adresse"
+                fullWidth
+                variant="outlined"
+                value={shippingInfo.adresse}
+                onChange={handleShippingInfoChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                id="ville"
+                name="ville"
+                label="Ville"
+                fullWidth
+                variant="outlined"
+                value={shippingInfo.ville}
+                onChange={handleShippingInfoChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                id="codePostal"
+                name="codePostal"
+                label="Code postal"
+                fullWidth
+                variant="outlined"
+                value={shippingInfo.codePostal}
+                onChange={handleShippingInfoChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                id="telephone"
+                name="telephone"
+                label="Téléphone"
+                fullWidth
+                variant="outlined"
+                value={shippingInfo.telephone}
+                onChange={handleShippingInfoChange}
+              />
+            </Grid>
+            
+          </Grid>
+        )
       case 2:
         return (
           <FormControl component="fieldset">
@@ -554,7 +516,7 @@ const Checkout = () => {
               Numéro de commande: <strong>{orderNumber}</strong>
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Un email de confirmation a été envoyé à {shippingInfo.email}
+              Un email de confirmation a été envoyé à {user?.email || "votre adresse email"}
             </Typography>
             <Button variant="contained" color="primary" onClick={handleReturnHome} sx={{ mt: 4 }}>
               Retour à l'accueil

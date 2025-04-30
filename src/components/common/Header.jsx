@@ -4,17 +4,21 @@ import { FaSearch } from "react-icons/fa"
 import "./Header.css"
 import PersonIcon from "@mui/icons-material/Person"
 import { Chip } from "@mui/material"
-import { Navbar, Nav, NavDropdown } from "react-bootstrap"
 import { Link, useNavigate } from "react-router-dom"
 import { styled } from "@mui/material/styles"
 import IconButton from "@mui/material/IconButton"
 import Badge from "@mui/material/Badge"
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCartOutlined"
 import EmailIcon from "@mui/icons-material/Email"
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
+import MenuIcon from "@mui/icons-material/Menu"
+import CloseIcon from "@mui/icons-material/Close"
 import CartDrawer from "../cart/CartDrawer"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useCart } from "react-use-cart"
 import { fetchcategories } from "../../service/categorieservice"
+import { fetchscategories } from "../../service/scategorieservice"
 
 const CartBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -31,6 +35,11 @@ const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [categories, setCategories] = useState([])
+  const [subcategories, setSubcategories] = useState([])
+  const [hoveredCategory, setHoveredCategory] = useState(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState({})
+  const timeoutRef = useRef(null)
 
   const toggleCartDrawer = () => {
     setDrawerOpen(!drawerOpen)
@@ -38,22 +47,24 @@ const Header = () => {
 
   const { totalItems } = useCart()
 
-  // Charger les catégories au chargement du composant
+  // Charger les catégories et sous-catégories au chargement du composant
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetchcategories()
-        setCategories(response.data)
+        const [catResponse, subcatResponse] = await Promise.all([fetchcategories(), fetchscategories()])
+        setCategories(catResponse.data)
+        setSubcategories(subcatResponse.data)
       } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error)
+        console.error("Erreur lors du chargement des données:", error)
       }
     }
 
-    loadCategories()
+    loadData()
   }, [])
 
   // Fonction pour filtrer par catégorie
   const handleCategoryClick = (categoryId, categoryName) => {
+    console.log("Filtrage par catégorie:", categoryId, categoryName)
     navigate("/product", {
       state: {
         filter: "category",
@@ -61,17 +72,79 @@ const Header = () => {
         value: categoryName,
       },
     })
+    setMobileMenuOpen(false)
   }
 
   // Fonction pour filtrer par sous-catégorie
   const handleSubcategoryClick = (subcategoryName) => {
+    console.log("Filtrage par sous-catégorie:", subcategoryName)
     navigate("/product", {
       state: {
         filter: "subcategory",
         value: subcategoryName,
       },
     })
+    setMobileMenuOpen(false)
   }
+
+  // Fonction pour obtenir les sous-catégories d'une catégorie
+  const getSubcategoriesForCategory = (categoryId) => {
+    return subcategories.filter((subcat) => subcat.categorieID && subcat.categorieID._id === categoryId)
+  }
+
+  // Fonction pour gérer le survol d'une catégorie
+  const handleCategoryHover = (categoryId) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    setHoveredCategory(categoryId)
+  }
+
+  // Fonction pour gérer la sortie du survol d'une catégorie
+  const handleCategoryLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setHoveredCategory(null)
+    }, 200) // Délai pour éviter la fermeture trop rapide
+  }
+
+  // Gérer l'expansion des catégories dans le menu mobile
+  const toggleCategory = (categoryId) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [categoryId]: !prev[categoryId],
+    }))
+  }
+
+  // Fermer le menu mobile quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        mobileMenuOpen &&
+        !event.target.closest(".mobile-menu-container") &&
+        !event.target.closest(".mobile-menu-toggle")
+      ) {
+        setMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [mobileMenuOpen])
+
+  // Empêcher le défilement du body quand le menu mobile est ouvert
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [mobileMenuOpen])
 
   // Fonction pour gérer la recherche
   const handleSearch = (e) => {
@@ -112,22 +185,22 @@ const Header = () => {
         </div>
 
         <form className="search-bar" onSubmit={handleSearch}>
-          <FaSearch className="search-icon" />
           <input
             type="text"
-            placeholder="Rechercher un produit, une marque..."
+            placeholder="Rechercher "
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Recherche"
           />
           <button type="submit" className="search-button">
-            Rechercher
+            <FaSearch className="search-icon" />
           </button>
         </form>
 
         <div className="header-icons">
           <div className="icon-item">
             <Chip
+              id="compte"
               className="se-connecter"
               icon={<PersonIcon />}
               label="Mon Compte"
@@ -135,8 +208,9 @@ const Header = () => {
               onClick={() => navigate("/mon-compte")}
             />
           </div>
-          <IconButton onClick={() => navigate("/favoris")} aria-label="Panier">
-          <i className="fa-regular fa-heart fa-xl"></i>
+
+          <IconButton onClick={() => navigate("/favoris")} aria-label="Favoris">
+            <FavoriteBorderIcon fontSize="medium" sx={{ color: "black" }} />
           </IconButton>
           <IconButton onClick={toggleCartDrawer} aria-label="Panier">
             <ShoppingCartIcon fontSize="large" sx={{ color: "black" }} />
@@ -145,137 +219,165 @@ const Header = () => {
         </div>
       </div>
 
-      <Navbar expand="lg" className="navbar">
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav" className="justify-content-center">
-          <Nav className="navbar-nav">
-            <Nav.Link href="/">Acceuil</Nav.Link>
-            {/*<Nav.Link href="/allproduct">Product</Nav.Link>*/}
-            <Nav.Link href="/promo">Promo</Nav.Link>
+      {/* Bouton du menu mobile */}
+      <button
+        className="mobile-menu-toggle"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+      >
+        {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+      </button>
 
-            {/* Menu Teint */}
-            <NavDropdown
-              title="Teint"
-              id="nav-dropdown-teint"
-              onClick={(e) => {
-                if (e.target.id === "nav-dropdown-teint") {
-                  // Trouver l'ID de la catégorie Teint
-                  const teintCategory = categories.find((cat) => cat.nomcategorie === "Teint")
-                  if (teintCategory) {
-                    handleCategoryClick(teintCategory._id, "Teint")
-                  }
-                }
-              }}
-            >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Base de teint")}>Base de teint</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Blush & Highlighter")}>
-                Blush & Highlighter
-              </NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick(" Pinceaux & Eponges")}>
-                Pinceaux & Eponges
-              </NavDropdown.Item>
-            </NavDropdown>
+      {/* Navigation desktop */}
+      <nav className="modern-nav">
+        <div className="nav-container">
+          <div className="nav-item">
+            <Link to="/" className="nav-link">
+              ACCUEIL
+            </Link>
+          </div>
+          <div className="nav-item">
+            <Link to="/promo" className="nav-link">
+              PROMOS
+            </Link>
+          </div>
+          
 
-            <NavDropdown
-              title="Yeux"
-              id="nav-dropdown-yeux"
-              onClick={(e) => {
-                if (e.target.id === "nav-dropdown-yeux") {
-                  const yeuxCategory = categories.find((cat) => cat.nomcategorie === "Yeux")
-                  if (yeuxCategory) {
-                    handleCategoryClick(yeuxCategory._id, "Yeux")
-                  }
-                }
-              }}
-            >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Mascara")}>Mascaras</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Palettes")}>Palettes</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Crayons yeux")}>Crayons</NavDropdown.Item>
-            </NavDropdown>
+          {/* Générer dynamiquement les menus de catégories */}
+          {categories.map((category) => {
+            const subcats = getSubcategoriesForCategory(category._id)
+            return subcats.length > 0 ? (
+              <div
+                key={category._id}
+                className={`nav-item has-dropdown ${hoveredCategory === category._id ? "active" : ""}`}
+                onMouseEnter={() => handleCategoryHover(category._id)}
+                onMouseLeave={handleCategoryLeave}
+              >
+                <div
+                  className="nav-link with-arrow"
+                  onClick={() => handleCategoryClick(category._id, category.nomcategorie)}
+                >
+                  {category.nomcategorie.toUpperCase()}
+                  <KeyboardArrowDownIcon className="dropdown-icon" />
+                </div>
 
-            <NavDropdown
-              title="Lèvres"
-              id="nav-dropdown-levres"
-              onClick={(e) => {
-                if (e.target.id === "nav-dropdown-levres") {
-                  const levresCategory = categories.find((cat) => cat.nomcategorie === "Lèvres")
-                  if (levresCategory) {
-                    handleCategoryClick(levresCategory._id, "Lèvres")
-                  }
-                }
-              }}
-            >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Rouge à levres")}>
-                Rouges à lèvres
-              </NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Gloss")}>Gloss</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Crayons levre")}>
-                Crayons à lèvres
-              </NavDropdown.Item>
-            </NavDropdown>
+                <div className="dropdown-menu">
+                  {subcats.map((subcat) => (
+                    <div
+                      key={subcat._id}
+                      className="dropdown-item"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSubcategoryClick(subcat.nomscategorie)
+                      }}
+                    >
+                      {subcat.nomscategorie.toUpperCase()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div key={category._id} className="nav-item">
+                <div className="nav-link" onClick={() => handleCategoryClick(category._id, category.nomcategorie)}>
+                  {category.nomcategorie.toUpperCase()}
+                </div>
+              </div>
+            )
+          })}
 
-            <NavDropdown
-              title="Ongles"
-              id="nav-dropdown-ongles"
-              onClick={(e) => {
-                if (e.target.id === "nav-dropdown-ongles") {
-                  const onglesCategory = categories.find((cat) => cat.nomcategorie === "Ongles")
-                  if (onglesCategory) {
-                    handleCategoryClick(onglesCategory._id, "Ongles")
-                  }
-                }
-              }}
-            >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Verni normal")}>Verni normal</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Verni permenent")}>
-                Verni permanent
-              </NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Accesoires ongles")}>
-                Accessoires ongles
-              </NavDropdown.Item>
-            </NavDropdown>
+          <div className="nav-item">
+            <Link to="/marques" className="nav-link">
+              MARQUES
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-            <NavDropdown
-              title="Cheveux"
-              id="nav-dropdown-cheveux"
-              onClick={(e) => {
-                if (e.target.id === "nav-dropdown-cheveux") {
-                  const cheveuxCategory = categories.find((cat) => cat.nomcategorie === "Cheveux")
-                  if (cheveuxCategory) {
-                    handleCategoryClick(cheveuxCategory._id, "Cheveux")
-                  }
-                }
-              }}
-            >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Shampoing")}>Shampoing</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Soin cheveux")}>Soin cheveux</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Accesoires cheveux")}>
-                Accessoires
-              </NavDropdown.Item>
-            </NavDropdown>
+      {/* Menu mobile */}
+      <div className={`mobile-menu-container ${mobileMenuOpen ? "open" : ""}`}>
+        <div className="mobile-menu-header">
+          <button className="mobile-menu-close" onClick={() => setMobileMenuOpen(false)} aria-label="Fermer le menu">
+            <CloseIcon />
+          </button>
+        </div>
 
-            <NavDropdown
-              title="Soin"
-              id="nav-dropdown-soin"
-              onClick={(e) => {
-                if (e.target.id === "nav-dropdown-soin") {
-                  const soinCategory = categories.find((cat) => cat.nomcategorie === "Soin")
-                  if (soinCategory) {
-                    handleCategoryClick(soinCategory._id, "Soin")
-                  }
-                }
-              }}
-            >
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Soin visage")}>Soin visage</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Soin corps")}>Soin corps</NavDropdown.Item>
-              <NavDropdown.Item onClick={() => handleSubcategoryClick("Parfum & Brume")}>
-                Parfum & Brume
-              </NavDropdown.Item>
-            </NavDropdown>
-            <Nav.Link href="/marques">Marques</Nav.Link>
-          </Nav>
-        </Navbar.Collapse>
-      </Navbar>
+        <nav className="mobile-menu-nav">
+          <ul className="mobile-menu-list">
+            <li className="mobile-menu-item">
+              <a href="/" className="mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                ACCUEIL
+              </a>
+            </li>
+            <li className="mobile-menu-item">
+              <a href="/promo" className="mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                PROMOS
+              </a>
+            </li>
+            <li className="mobile-menu-item">
+              <a href="/new" className="mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                NEW
+              </a>
+            </li>
+
+            {categories.map((category) => (
+              <li key={category._id} className="mobile-menu-item">
+                <div className="mobile-menu-category">
+                  <a
+                    href="#"
+                    className="mobile-menu-link"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleCategoryClick(category._id, category.nomcategorie)
+                    }}
+                  >
+                    {category.nomcategorie.toUpperCase()}
+                  </a>
+                  {getSubcategoriesForCategory(category._id).length > 0 && (
+                    <button
+                      className="mobile-menu-expand"
+                      onClick={() => toggleCategory(category._id)}
+                      aria-label={`Développer ${category.nomcategorie}`}
+                    >
+                      {expandedCategories[category._id] ? (
+                        <KeyboardArrowDownIcon />
+                      ) : (
+                        <KeyboardArrowDownIcon className="collapsed" />
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {expandedCategories[category._id] && (
+                  <ul className="mobile-submenu">
+                    {getSubcategoriesForCategory(category._id).map((subcat) => (
+                      <li key={subcat._id} className="mobile-submenu-item">
+                        <a
+                          href="#"
+                          className="mobile-submenu-link"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleSubcategoryClick(subcat.nomscategorie)
+                          }}
+                        >
+                          {subcat.nomscategorie.toUpperCase()}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+
+            <li className="mobile-menu-item">
+              <a href="/marques" className="mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>
+                MARQUES
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {mobileMenuOpen && <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)}></div>}
 
       <CartDrawer drawerOpen={drawerOpen} toggleCartDrawer={toggleCartDrawer} />
     </header>
