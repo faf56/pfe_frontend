@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Kanchenjunga:wght@400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap');
 /* Bannière promo */
 .promo-banner {
   display: flex;
@@ -429,51 +430,7 @@
 }
 
 /* Reste du CSS inchangé */
-/* carousel */
-@media (max-width: 768px) {
-  .carousel-control-prev {
-    left: 10px;
-  }
 
-  .carousel-control-next {
-    right: 10px;
-  }
-}
-
-.carousel {
-  max-width: 93%; /* Ajuste la largeur */
-  margin: auto; /* Centre le carrousel */
-  position: relative;
-  margin-top: 20px;
-}
-
-.carousel-item img {
-  max-height: 100%; /* Réduit la hauteur des images */
-  object-fit: cover; /* Coupe les images si nécessaire pour garder un bon affichage */
-  border-radius: 5px; /* Ajoute un léger arrondi */
-}
-
-.carousel-control-prev,
-.carousel-control-next {
-  width: auto; /* Ajuste la largeur pour ne pas couvrir toute l'image */
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.carousel-control-prev {
-  left: -40px; /* Déplace la flèche à gauche en dehors de l'image */
-}
-
-.carousel-control-next {
-  right: -40px; /* Déplace la flèche à droite en dehors de l'image */
-}
-
-.carousel-control-prev-icon,
-.carousel-control-next-icon {
-  background-color: rgba(236, 10, 232, 0.54);
-  border-radius: 50%;
-  padding: 10px;
-}
 
 /* footer */
 .footer {
@@ -528,129 +485,8 @@
   }
 }
 
-/* best seler */
-.memcategorie-container {
-  text-align: center;
-  background-color: #f0d0f7;
-  padding: 30px 0;
-  margin-top: 20px;
-  grid-template-columns: repeat(3, 1fr);
-}
-.promo-container {
-  text-align: center;
-  background-color: #bff3bd;
-  padding: 30px 0;
-  margin-top: 20px;
-}
-.best-sellers-container {
-  text-align: center;
-  background-color: #ccecec;
-  padding: 30px 0;
-}
 
-.title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #0f0f0f;
-}
 
-.best-sellers-container {
-  padding: 20px;
-  text-align: center;
-}
-
-.title {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
-.carousel {
-  margin-bottom: 20px;
-}
-
-/* Responsive pour les cartes */
-@media (max-width: 1200px) {
-  .card-container {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (max-width: 992px) {
-  .card-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .card-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 576px) {
-  .card-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Styles pour la section des services */
-.services-section {
-  padding: 40px 0;
-  background-color: #f8f9fa;
-  margin-bottom: 30px;
-}
-
-.service-card {
-  padding: 24px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
-}
-
-.service-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-}
-
-.service-icon {
-  margin-bottom: 16px;
-  color: #ff5160;
-  background-color: rgba(255, 81, 96, 0.1);
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.service-title {
-  margin-bottom: 8px !important;
-  font-weight: 600 !important;
-  color: #333;
-}
-
-.service-description {
-  color: #666;
-  line-height: 1.5;
-}
-
-/* Styles responsifs */
-@media (max-width: 768px) {
-  .services-section {
-    padding: 30px 0;
-  }
-
-  .service-card {
-    margin-bottom: 16px;
-  }
-}
 
 /* Styles pour la section des avantages */
 .advantages-section {

@@ -9,8 +9,7 @@ import CancelIcon from "@mui/icons-material/Cancel"
 import LocalOfferIcon from "@mui/icons-material/LocalOffer"
 import Card from "../components/card/Card"
 import { Row, Col, Carousel } from "react-bootstrap"
-import { addToFavorites, removeFromFavorites, checkIsFavorite } from "../service/favoriteService";
-
+import { addToFavorites, removeFromFavorites, checkIsFavorite } from "../service/favoriteService"
 
 // Material UI imports
 import {
@@ -40,6 +39,7 @@ import RemoveIcon from "@mui/icons-material/Remove"
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import FavoriteIcon from "@mui/icons-material/Favorite"
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
 import ShareIcon from "@mui/icons-material/Share"
 import LocalShippingIcon from "@mui/icons-material/LocalShipping"
 import StoreIcon from "@mui/icons-material/Store"
@@ -72,10 +72,11 @@ const ProductDetail = () => {
   const [tabValue, setTabValue] = useState(0)
   const [similarProducts, setSimilarProducts] = useState([])
   const [loadingSimilar, setLoadingSimilar] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const cartItem = getItem(id)
   const [quantity, setQuantity] = useState(cartItem ? cartItem.quantity : 1)
-  const [isFavorite, setIsFavorite] = useState(false);
 
   // Charger les détails du produit
   useEffect(() => {
@@ -114,20 +115,63 @@ const ProductDetail = () => {
     fetchProductDetails()
   }, [id, getItem])
 
+  // Vérifier si le produit est dans les favoris
   useEffect(() => {
     if (product?._id) {
-      setIsFavorite(checkIsFavorite(product._id));
-    }
-  }, [product?._id]);
+      const checkFavoriteStatus = async () => {
+        const status = await checkIsFavorite(product._id)
+        setIsFavorite(status)
+      }
 
-  const toggleFavorite = () => {
-    if (isFavorite) {
-      removeFromFavorites(product._id);
-    } else {
-      addToFavorites(product._id);
+      checkFavoriteStatus()
+
+      // Écouter les changements de favoris
+      const handleFavoritesChanged = async () => {
+        const status = await checkIsFavorite(product._id)
+        setIsFavorite(status)
+      }
+
+      window.addEventListener("favoritesChanged", handleFavoritesChanged)
+      window.addEventListener("userLogin", handleFavoritesChanged)
+
+      return () => {
+        window.removeEventListener("favoritesChanged", handleFavoritesChanged)
+        window.removeEventListener("userLogin", handleFavoritesChanged)
+      }
     }
-    setIsFavorite(!isFavorite);
-  };
+  }, [product?._id])
+
+  // Modifier la fonction toggleFavorite pour vérifier l'authentification
+  const toggleFavorite = async () => {
+    if (isProcessing) return
+
+    // Vérifier si l'utilisateur est connecté
+    const isAuthenticated = localStorage.getItem("CC_Token") !== null && localStorage.getItem("user") !== null
+    if (!isAuthenticated) {
+      // Stocker l'URL actuelle pour rediriger l'utilisateur après la connexion
+      sessionStorage.setItem("redirectAfterLogin", window.location.pathname)
+      // Rediriger vers la page de connexion
+      navigate("/login")
+      return
+    }
+
+    setIsProcessing(true)
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(product._id)
+      } else {
+        await addToFavorites(product._id)
+      }
+
+      setIsFavorite(!isFavorite)
+    } catch (error) {
+      console.error("Erreur lors de la modification des favoris:", error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   // Fonction pour récupérer les produits similaires
   const fetchSimilarProductsData = async (categoryId, productId) => {
     if (!categoryId) return
@@ -234,7 +278,7 @@ const ProductDetail = () => {
   }
 
   // Préparer les chunks pour le carousel
-  const similarProductChunks = chunkArray(similarProducts, 5)
+  const similarProductChunks = chunkArray(similarProducts, 4)
 
   return (
     <>
@@ -455,13 +499,14 @@ const ProductDetail = () => {
                       Ajouter au panier
                     </Button>
 
-                    <IconButton 
-  color={isFavorite ? "error" : "default"} 
-  aria-label="Ajouter aux favoris"
-  onClick={toggleFavorite}
->
-   <FavoriteIcon />   {/* Modifiez ici */}
-</IconButton>
+                    <IconButton
+                      color={isFavorite ? "error" : "default"}
+                      aria-label="Ajouter aux favoris"
+                      onClick={toggleFavorite}
+                      disabled={isProcessing}
+                    >
+                      {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                    </IconButton>
 
                     <IconButton color="primary" aria-label="Partager">
                       <ShareIcon />
@@ -598,7 +643,7 @@ const ProductDetail = () => {
 
       {/* Section des produits de la même catégorie */}
       <div className="memcategorie-container">
-        <h2 className="title">Produit Meme Categorie</h2>
+        <h2 className="title_similer">Produit Meme Categorie</h2>
 
         {loadingSimilar ? (
           <div className="loading-container">

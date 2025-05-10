@@ -38,6 +38,7 @@ import OrderStatusChart from "./OrderStatusChart"
 import TopSellingProducts from "./TopSellingProducts"
 import RecentOrders from "./RecentOrders"
 import StockAlerts from "./StockAlerts"
+import RevenueStats from "./RevenueStats"
 
 // Styled components
 const PageHeader = styled(Box)(({ theme }) => ({
@@ -57,6 +58,11 @@ const StatCard = styled(Card)(({ theme }) => ({
   borderRadius: "12px",
   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
   height: "100%",
+  transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
+  },
 }))
 
 const StatIconWrapper = styled(Box)(({ theme, bgcolor }) => ({
@@ -75,6 +81,11 @@ const ChartContainer = styled(Paper)(({ theme }) => ({
   borderRadius: "12px",
   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
   height: "100%",
+  transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
+  },
 }))
 
 const LoadingContainer = styled(Box)(({ theme }) => ({
@@ -82,6 +93,25 @@ const LoadingContainer = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   alignItems: "center",
   height: "300px",
+}))
+
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  fontSize: "1.25rem",
+  fontWeight: 600,
+  marginBottom: "16px",
+  marginTop: "32px",
+  color: "#333",
+  display: "flex",
+  alignItems: "center",
+  "&:before": {
+    content: '""',
+    display: "block",
+    width: "4px",
+    height: "24px",
+    backgroundColor: theme.palette.primary.main,
+    marginRight: "12px",
+    borderRadius: "4px",
+  },
 }))
 
 const Dashboard = () => {
@@ -401,7 +431,15 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
+      {/* Statistiques de chiffre d'affaires */}
+      <SectionTitle>Analyse du chiffre d'affaires</SectionTitle>
+      <RevenueStats orders={dashboardData.orders} />
+
+      {/* Alertes de stock */}
+      <SectionTitle>Alertes de stock</SectionTitle>
+      <StockAlerts products={stats.stockAlerts} />
       {/* Graphiques */}
+      <SectionTitle>Aperçu des performances</SectionTitle>
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
           <ChartContainer>
@@ -432,6 +470,7 @@ const Dashboard = () => {
       </Grid>
 
       {/* Statistiques détaillées */}
+      <SectionTitle>Statistiques détaillées</SectionTitle>
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} lg={3}>
           <StatCard>
@@ -695,6 +734,7 @@ const Dashboard = () => {
       </Grid>
 
       {/* Produits les plus vendus et commandes récentes */}
+      <SectionTitle>Produits et commandes</SectionTitle>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <TopSellingProducts products={stats.topSellingProducts} />
@@ -704,10 +744,7 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Alertes de stock */}
-      <Box sx={{ mt: 3 }}>
-        <StockAlerts products={stats.stockAlerts} />
-      </Box>
+      
     </Box>
   )
 }

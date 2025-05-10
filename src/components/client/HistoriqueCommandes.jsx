@@ -442,18 +442,7 @@ const HistoriqueCommandes = ({ userId }) => {
 
             <DialogActions>
               <Button onClick={handleCloseDialog}>Fermer</Button>
-              {selectedOrder.statut === "en_attente" && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => {
-                    // Ici, vous pourriez implémenter la logique d'annulation de commande
-                    alert("Fonctionnalité d'annulation à implémenter")
-                  }}
-                >
-                  Annuler la commande
-                </Button>
-              )}
+              
             </DialogActions>
           </>
         )}

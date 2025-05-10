@@ -2,29 +2,81 @@
 
 import { useCart } from "react-use-cart"
 import { useNavigate } from "react-router-dom"
-import { useState, useEffect } from "react";
-import { addToFavorites, removeFromFavorites, checkIsFavorite } from "../../service/favoriteService";
+import { useState, useEffect } from "react"
+import {
+  addToFavorites,
+  removeFromFavorites,
+  checkIsFavorite,
+  checkIsFavoriteSync,
+} from "../../service/favoriteService"
 import "./card.css"
-import { Favorite, FavoriteBorder } from "@mui/icons-material";
+import { Favorite, FavoriteBorder } from "@mui/icons-material"
 
 const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqueID }) => {
   const { addItem } = useCart()
   const navigate = useNavigate()
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(checkIsFavoriteSync(_id))
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
-    setIsFavorite(checkIsFavorite(_id));
-  }, [_id]);
-
-  const toggleFavorite = (e) => {
-    e.stopPropagation();
-    if (isFavorite) {
-      removeFromFavorites(_id);
-    } else {
-      addToFavorites(_id);
+    // Vérifier de manière asynchrone si le produit est dans les favoris
+    const checkFavoriteStatus = async () => {
+      const status = await checkIsFavorite(_id)
+      setIsFavorite(status)
     }
-    setIsFavorite(!isFavorite);
-  };
+
+    checkFavoriteStatus()
+
+    // Écouter les changements de favoris
+    const handleFavoritesChanged = async () => {
+      const status = await checkIsFavorite(_id)
+      setIsFavorite(status)
+    }
+
+    window.addEventListener("favoritesChanged", handleFavoritesChanged)
+    window.addEventListener("userLogin", handleFavoritesChanged)
+    window.addEventListener("userLogout", handleFavoritesChanged)
+
+    return () => {
+      window.removeEventListener("favoritesChanged", handleFavoritesChanged)
+      window.removeEventListener("userLogin", handleFavoritesChanged)
+      window.removeEventListener("userLogout", handleFavoritesChanged)
+    }
+  }, [_id])
+
+  // Modifier la fonction toggleFavorite pour vérifier l'authentification
+  const toggleFavorite = async (e) => {
+    e.stopPropagation()
+
+    if (isProcessing) return // Éviter les clics multiples
+
+    // Vérifier si l'utilisateur est connecté
+    const isAuthenticated = localStorage.getItem("CC_Token") !== null && localStorage.getItem("user") !== null
+    if (!isAuthenticated) {
+      // Stocker l'URL actuelle pour rediriger l'utilisateur après la connexion
+      sessionStorage.setItem("redirectAfterLogin", window.location.pathname)
+      // Rediriger vers la page de connexion
+      navigate("/login")
+      return
+    }
+
+    setIsProcessing(true)
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(_id)
+      } else {
+        await addToFavorites(_id)
+      }
+
+      // Mettre à jour l'état local
+      setIsFavorite(!isFavorite)
+    } catch (error) {
+      console.error("Erreur lors de la modification des favoris:", error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
 
   // Determine which price to use
   const hasPromo = prixPromo !== null && prixPromo !== undefined && prixPromo > 0 && prixPromo < prix
@@ -59,7 +111,6 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
     <div
       className="card"
       onClick={() => {
-        console.log("Produit cliqué, ID:", _id) // Debug ici
         if (_id) {
           navigate(`/produit/${_id}`)
         } else {
@@ -68,9 +119,10 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
       }}
       style={{ cursor: "pointer" }}
     >
-      <button 
+      <button
         className="favorite-button"
         onClick={toggleFavorite}
+        disabled={isProcessing}
         style={{
           position: "absolute",
           top: "10px",
@@ -83,15 +135,11 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          cursor: "pointer",
+          cursor: isProcessing ? "wait" : "pointer",
           zIndex: 2,
         }}
       >
-        {isFavorite ? (
-          <Favorite style={{ color: "#FC6A80FF" }} />
-        ) : (
-          <FavoriteBorder style={{ color: "#666" }} />
-        )}
+        {isFavorite ? <Favorite style={{ color: "#FC6A80FF" }} /> : <FavoriteBorder style={{ color: "#666" }} />}
       </button>
       {hasPromo && (
         <div

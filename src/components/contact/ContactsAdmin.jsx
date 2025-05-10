@@ -83,7 +83,6 @@ export default function ContactsAdmin() {
     try {
       const response = await updateContactStatus(selectedContact._id, newStatus)
       if (response.data.success) {
-        // Mettre à jour l'état local
         setContacts(contacts.map((c) => (c._id === selectedContact._id ? { ...c, status: newStatus } : c)))
         showNotification("Statut mis à jour avec succès", "success")
       }
@@ -99,7 +98,6 @@ export default function ContactsAdmin() {
     try {
       const response = await deleteContact(selectedContact._id)
       if (response.data.success) {
-        // Mettre à jour l'état local
         setContacts(contacts.filter((c) => c._id !== selectedContact._id))
         showNotification("Message supprimé avec succès", "success")
       }
@@ -137,7 +135,6 @@ export default function ContactsAdmin() {
   }
 
   const handleCloseViewDialog = () => {
-    // Définir un délai court pour permettre au focus de se réinitialiser correctement
     setTimeout(() => {
       setOpenViewDialog(false)
     }, 0)
@@ -268,9 +265,8 @@ export default function ContactsAdmin() {
                   <Button
                     variant="outlined"
                     startIcon={<EmailIcon />}
-                    href={`/uploads/contacts/${selectedContact.attachment.filename}`}
-                    target="_blank"
-                    download // Ajoutez cet attribut
+                    href={`/api/contact/attachment/${	selectedContact._id}`}
+                    download={selectedContact.attachment.filename}
                   >
                     {selectedContact.attachment.filename}
                   </Button>
@@ -286,7 +282,6 @@ export default function ContactsAdmin() {
             color="warning"
             onClick={() => {
               handleCloseViewDialog()
-              // Ajouter un délai avant d'ouvrir le dialogue d'édition
               setTimeout(() => {
                 handleEditStatus(selectedContact)
               }, 100)

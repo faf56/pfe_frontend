@@ -97,9 +97,9 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
     description: "",
     marqueID: "",
     scategorieID: "",
-    stock: 0,
-    prix: 0,
-    prixPromo: null,
+    stock: "0",
+    prix: "0",
+    prixPromo: "",
     imagepro: "",
   })
 
@@ -111,7 +111,7 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
   const [formErrors, setFormErrors] = useState({})
   const [loadingData, setLoadingData] = useState(true)
   const [hasPromo, setHasPromo] = useState(false)
-  const [promoPercent, setPromoPercent] = useState(0)
+  const [promoPercent, setPromoPercent] = useState("0")
 
   const loadscategories = async () => {
     try {
@@ -151,19 +151,23 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
     if (!produit.description.trim()) errors.description = "La désignation est requise"
     if (!produit.marqueID) errors.marqueID = "La marque est requise"
     if (!produit.scategorieID) errors.scategorieID = "La catégorie est requise"
+    if (!produit.imagepro) errors.imagepro = "Une image du produit est requise"
 
-    if (produit.stock <= 0) {
+    const stockNum = Number.parseFloat(produit.stock)
+    if (isNaN(stockNum) || stockNum <= 0) {
       errors.stock = "Le stock doit être supérieur à 0"
     }
 
-    if (produit.prix <= 0) {
+    const prixNum = Number.parseFloat(produit.prix)
+    if (isNaN(prixNum) || prixNum <= 0) {
       errors.prix = "Le prix doit être supérieur à 0"
     }
 
     if (hasPromo) {
-      if (!produit.prixPromo || produit.prixPromo <= 0) {
+      const prixPromoNum = Number.parseFloat(produit.prixPromo)
+      if (isNaN(prixPromoNum) || prixPromoNum <= 0) {
         errors.prixPromo = "Le prix promotionnel doit être supérieur à 0"
-      } else if (produit.prixPromo >= produit.prix) {
+      } else if (prixPromoNum >= prixNum) {
         errors.prixPromo = "Le prix promotionnel doit être inférieur au prix normal"
       }
     }
@@ -174,6 +178,7 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    // Toujours stocker les valeurs comme des chaînes
     setProduit({ ...produit, [name]: value })
 
     // Clear error for this field when user types
@@ -186,7 +191,7 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
     const checked = e.target.checked
     setHasPromo(checked)
     if (!checked) {
-      setProduit({ ...produit, prixPromo: null })
+      setProduit({ ...produit, prixPromo: "" })
       if (formErrors.prixPromo) {
         setFormErrors({ ...formErrors, prixPromo: null })
       }
@@ -194,13 +199,16 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
   }
 
   const handlePercentChange = (e) => {
-    const percent = Number.parseFloat(e.target.value)
-    setPromoPercent(percent)
+    const percentValue = e.target.value
+    setPromoPercent(percentValue)
 
     // Calculer le nouveau prix promotionnel basé sur le pourcentage
-    if (percent > 0 && percent < 100 && produit.prix > 0) {
-      const newPromoPrice = produit.prix * (1 - percent / 100)
-      setProduit({ ...produit, prixPromo: Number.parseFloat(newPromoPrice.toFixed(3)) })
+    const percent = Number.parseFloat(percentValue)
+    const prix = Number.parseFloat(produit.prix)
+
+    if (!isNaN(percent) && percent > 0 && percent < 100 && !isNaN(prix) && prix > 0) {
+      const newPromoPrice = prix * (1 - percent / 100)
+      setProduit({ ...produit, prixPromo: newPromoPrice.toFixed(3) })
 
       // Clear error for prixPromo if it exists
       if (formErrors.prixPromo) {
@@ -218,10 +226,13 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
     setError(null)
 
     try {
-      // Si pas de promo, s'assurer que prixPromo est null
+      // Convertir les chaînes en nombres pour l'API
       const productData = {
         ...produit,
-        prixPromo: hasPromo ? produit.prixPromo : null,
+        prix: Number.parseFloat(produit.prix),
+        stock: Number.parseInt(produit.stock, 10),
+        // Si pas de promo, s'assurer que prixPromo est null
+        prixPromo: hasPromo ? (produit.prixPromo ? Number.parseFloat(produit.prixPromo) : null) : null,
       }
 
       const response = await addproduit(productData)
@@ -234,14 +245,14 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
         description: "",
         marqueID: "",
         scategorieID: "",
-        stock: 0,
-        prix: 0,
-        prixPromo: null,
+        stock: "0",
+        prix: "0",
+        prixPromo: "",
         imagepro: "",
       })
       setFiles([])
       setHasPromo(false)
-      setPromoPercent(0)
+      setPromoPercent("0")
     } catch (err) {
       console.error("Erreur lors de l'ajout du produit :", err)
       setError(err.response?.data?.message || "Une erreur est survenue lors de l'ajout du produit")
@@ -309,8 +320,14 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
 
   // Calculer le pourcentage de réduction
   const calculateDiscount = () => {
-    if (!hasPromo || !produit.prix || !produit.prixPromo || produit.prixPromo >= produit.prix) return 0
-    return Math.round(((produit.prix - produit.prixPromo) / produit.prix) * 100)
+    const prix = Number.parseFloat(produit.prix)
+    const prixPromo = Number.parseFloat(produit.prixPromo)
+
+    if (!hasPromo || isNaN(prix) || isNaN(prixPromo) || prix <= 0 || prixPromo <= 0 || prixPromo >= prix) {
+      return 0
+    }
+
+    return Math.round(((prix - prixPromo) / prix) * 100)
   }
 
   return (
@@ -398,7 +415,8 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
                   fullWidth
                   label="Prix"
                   name="prix"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={produit.prix}
                   onChange={handleChange}
                   error={!!formErrors.prix}
@@ -434,8 +452,9 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
                       fullWidth
                       label="Prix promotionnel"
                       name="prixPromo"
-                      type="number"
-                      value={produit.prixPromo || ""}
+                      type="text"
+                      inputMode="decimal"
+                      value={produit.prixPromo}
                       onChange={handleChange}
                       error={!!formErrors.prixPromo}
                       helperText={formErrors.prixPromo}
@@ -452,29 +471,31 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
                         fullWidth
                         label="Pourcentage de réduction"
                         name="promoPercent"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={promoPercent}
                         onChange={handlePercentChange}
                         InputProps={{
                           endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                          inputProps: { min: 0, max: 99 },
                         }}
                         helperText="Saisissez le pourcentage pour calculer automatiquement le prix promotionnel"
                       />
 
-                      {produit.prix > 0 && produit.prixPromo > 0 && produit.prixPromo < produit.prix && (
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Réduction:
-                          </Typography>
-                          <Chip
-                            label={`-${calculateDiscount()}%`}
-                            color="error"
-                            size="small"
-                            sx={{ fontWeight: "bold" }}
-                          />
-                        </Box>
-                      )}
+                      {Number.parseFloat(produit.prix) > 0 &&
+                        Number.parseFloat(produit.prixPromo) > 0 &&
+                        Number.parseFloat(produit.prixPromo) < Number.parseFloat(produit.prix) && (
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Réduction:
+                            </Typography>
+                            <Chip
+                              label={`-${calculateDiscount()}%`}
+                              color="error"
+                              size="small"
+                              sx={{ fontWeight: "bold" }}
+                            />
+                          </Box>
+                        )}
                     </Box>
                   </PromoSection>
                 )}
@@ -483,7 +504,8 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
                   fullWidth
                   label="Quantité en stock"
                   name="stock"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={produit.stock}
                   onChange={handleChange}
                   error={!!formErrors.stock}
@@ -556,7 +578,7 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
                   Image du produit
                 </Typography>
 
-                <ImageUploadSection>
+                <ImageUploadSection sx={{ border: formErrors.imagepro ? "1px solid #d32f2f" : "1px dashed #e0e0e0" }}>
                   <FilePond
                     files={files}
                     onupdatefiles={setFiles}
@@ -588,6 +610,12 @@ const Insertproduit = ({ show, handleClose, handleAddproduct }) => {
                         }}
                       />
                     </Box>
+                  )}
+
+                  {formErrors.imagepro && (
+                    <Typography variant="caption" color="error" sx={{ display: "block", mt: 1, ml: 1 }}>
+                      {formErrors.imagepro}
+                    </Typography>
                   )}
                 </ImageUploadSection>
               </Box>

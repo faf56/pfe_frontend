@@ -12,6 +12,7 @@ import {
   HeadsetMic as SupportIcon,
 } from "@mui/icons-material"
 import "../components/card/card.css"
+import "./Homebody.css"
 
 const Homebody = () => {
   const [produits, setProduit] = useState([])
@@ -52,8 +53,8 @@ const Homebody = () => {
     return result
   }
 
-  const productChunks = chunkArray(produits, 5)
-  const promoProductChunks = chunkArray(promoProducts, 5)
+  const productChunks = chunkArray(produits, 4)
+  const promoProductChunks = chunkArray(promoProducts, 4)
 
   return (
     <>
@@ -189,8 +190,8 @@ const Homebody = () => {
         </Container>
       </div>
 
-      <div className="best-sellers-container">
-        <h2 className="title">N O U V E A U X P R O D U I T S</h2>
+      <div className="new-container">
+        <h2 className="title_new">NOUVEAUX PRODUITS</h2>
         <Carousel indicators={false} interval={3000}>
           {productChunks.map((chunk, index) => (
             <Carousel.Item key={index}>
@@ -217,7 +218,7 @@ const Homebody = () => {
       </div>
 
       <div className="promo-container">
-        <h2 className="title">P R O D U I T S E N P R O M O</h2>
+        <h2 className="title_promo">PRODUITS EN PROMO</h2>
         {loadingPromo ? (
           <div className="loading-container">
             <div className="spinner"></div>

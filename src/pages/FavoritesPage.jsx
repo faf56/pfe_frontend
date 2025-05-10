@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { getFavorites, clearFavorites } from "../service/favoriteService"
+import { getFavorites, clearFavorites, fetchFavoritesFromServer } from "../service/favoriteService"
 import { fetchproduitById } from "../service/produitservice"
 import Card from "../components/card/Card"
 import { Container, Typography, Button, Box, CircularProgress, Grid, Breadcrumbs, Link } from "@mui/material"
@@ -13,12 +13,23 @@ const FavoritesPage = () => {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    localStorage.getItem("CC_Token") !== null && localStorage.getItem("user") !== null,
+  )
 
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        setLoading(true)
-        const favoriteIds = getFavorites()
+  // Fonction pour charger les favoris
+  const loadFavorites = async () => {
+    try {
+      setLoading(true)
+
+      if (isAuthenticated) {
+        // Pour les utilisateurs connectés, récupérer directement les produits favoris complets
+        const favoriteProducts = await fetchFavoritesFromServer()
+        setProducts(favoriteProducts)
+        setFavorites(favoriteProducts.map((product) => product._id))
+      } else {
+        // Pour les utilisateurs non connectés, récupérer les IDs puis les produits
+        const favoriteIds = await getFavorites()
         setFavorites(favoriteIds)
 
         if (favoriteIds.length > 0) {
@@ -35,41 +46,58 @@ const FavoritesPage = () => {
           )
 
           // Filtrer les produits null (en cas d'erreur)
-          setProducts(productsData.filter((product) => product !== null))
+          const validProducts = productsData.filter((product) => product !== null)
+          setProducts(validProducts)
         } else {
           setProducts([])
         }
-      } catch (error) {
-        console.error("Erreur lors du chargement des favoris:", error)
-      } finally {
-        setLoading(false)
       }
-    }
-
-    loadFavorites()
-
-    // Ajouter un écouteur d'événements pour mettre à jour la liste des favoris
-    window.addEventListener("storage", handleStorageChange)
-    return () => {
-      window.removeEventListener("storage", handleStorageChange)
-    }
-  }, [])
-
-  // Gérer les changements de localStorage (si l'utilisateur modifie les favoris dans un autre onglet)
-  const handleStorageChange = (e) => {
-    if (e.key === "perlacoif_favorites") {
-      setFavorites(JSON.parse(e.newValue || "[]"))
+    } catch (error) {
+      console.error("Erreur lors du chargement des favoris:", error)
+      setProducts([])
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleClearFavorites = () => {
-    clearFavorites()
+  useEffect(() => {
+    loadFavorites()
+
+    // Vérifier l'état d'authentification
+    const checkAuth = () => {
+      setIsAuthenticated(localStorage.getItem("CC_Token") !== null && localStorage.getItem("user") !== null)
+    }
+
+    // Ajouter un écouteur d'événements pour mettre à jour la liste des favoris
+    const handleFavoritesChanged = () => {
+      console.log("Événement favoritesChanged détecté, rechargement des favoris...")
+      loadFavorites()
+    }
+
+    const handleAuthChanged = () => {
+      checkAuth()
+      loadFavorites()
+    }
+
+    window.addEventListener("favoritesChanged", handleFavoritesChanged)
+    window.addEventListener("userLogin", handleAuthChanged)
+    window.addEventListener("userLogout", handleAuthChanged)
+
+    return () => {
+      window.removeEventListener("favoritesChanged", handleFavoritesChanged)
+      window.removeEventListener("userLogin", handleAuthChanged)
+      window.removeEventListener("userLogout", handleAuthChanged)
+    }
+  }, [isAuthenticated])
+
+  const handleClearFavorites = async () => {
+    await clearFavorites()
     setFavorites([])
     setProducts([])
   }
 
   const handleShopNow = () => {
-    navigate("/produits")
+    navigate("/product")
   }
 
   return (
@@ -87,8 +115,6 @@ const FavoritesPage = () => {
           <Favorite sx={{ mr: 1, verticalAlign: "middle", color: "#e74c3c" }} />
           Mes Produits Favoris
         </Typography>
-
-        
       </Box>
 
       {loading ? (
@@ -96,7 +122,7 @@ const FavoritesPage = () => {
           <CircularProgress />
         </Box>
       ) : favorites.length === 0 ? (
-        <Box className="no-favorites">
+        <Box className="no-favorites" sx={{ textAlign: "center", py: 5 }}>
           <Typography variant="h5" gutterBottom>
             Vous n'avez pas encore de produits favoris
           </Typography>
@@ -109,27 +135,29 @@ const FavoritesPage = () => {
         </Box>
       ) : (
         <Grid container spacing={3} className="favorites-grid">
-  {products.map((product) => (
-    <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
-      <Card
-        _id={product._id}
-        imagepro={product.imagepro}
-        title={product.title}
-        description={product.description}
-        prix={product.prix}
-        prixPromo={product.prixPromo}
-        stock={product.stock}
-        marqueID={product.marqueID}
-      />
-    </Grid>
-  ))}
-</Grid>
+          {products.map((product) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
+              <Card
+                _id={product._id}
+                imagepro={product.imagepro}
+                title={product.title}
+                description={product.description}
+                prix={product.prix}
+                prixPromo={product.prixPromo}
+                stock={product.stock}
+                marqueID={product.marqueID}
+              />
+            </Grid>
+          ))}
+        </Grid>
       )}
       {favorites.length > 0 && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <Button variant="outlined" color="error" onClick={handleClearFavorites} className="clear-favorites">
             Vider mes favoris
           </Button>
-        )}
+        </Box>
+      )}
     </Container>
   )
 }

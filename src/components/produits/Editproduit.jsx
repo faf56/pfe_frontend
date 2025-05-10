@@ -92,15 +92,16 @@ const PromoSection = styled(Box)(({ theme }) => ({
 }))
 
 const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
+  // Utiliser des chaînes pour toutes les valeurs de formulaire pour éviter les problèmes de NaN
   const [produit, setProduit] = useState({
     _id: "",
     title: "",
     description: "",
     marqueID: "",
     scategorieID: "",
-    stock: 0,
-    prix: 0,
-    prixPromo: null,
+    stock: "0",
+    prix: "0",
+    prixPromo: "",
     imagepro: "",
   })
 
@@ -112,7 +113,7 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
   const [formErrors, setFormErrors] = useState({})
   const [loadingData, setLoadingData] = useState(true)
   const [hasPromo, setHasPromo] = useState(false)
-  const [promoPercent, setPromoPercent] = useState(0)
+  const [promoPercent, setPromoPercent] = useState("0")
 
   const loadscategories = async () => {
     try {
@@ -158,21 +159,22 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
       setHasPromo(promoExists)
 
       // Calculer le pourcentage de réduction si une promotion existe
-      let calculatedPercent = 0
+      let calculatedPercent = "0"
       if (promoExists && pro.prix > 0) {
-        calculatedPercent = Math.round(((pro.prix - pro.prixPromo) / pro.prix) * 100)
+        calculatedPercent = Math.round(((pro.prix - pro.prixPromo) / pro.prix) * 100).toString()
       }
       setPromoPercent(calculatedPercent)
 
+      // Convertir toutes les valeurs numériques en chaînes pour éviter les problèmes de NaN
       setProduit({
         _id: pro._id || "",
         title: pro.title || "",
         description: pro.description || "",
         marqueID: marqueExists ? pro.marqueID?._id : "",
         scategorieID: scategorieExists ? pro.scategorieID?._id : "",
-        stock: pro.stock || 0,
-        prix: pro.prix || 0,
-        prixPromo: promoExists ? pro.prixPromo : null,
+        stock: (pro.stock || 0).toString(),
+        prix: (pro.prix || 0).toString(),
+        prixPromo: pro.prixPromo ? pro.prixPromo.toString() : "",
         imagepro: pro.imagepro || "",
       })
 
@@ -188,18 +190,21 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
     if (!produit.marqueID) errors.marqueID = "La marque est requise"
     if (!produit.scategorieID) errors.scategorieID = "La catégorie est requise"
 
-    if (produit.stock <= 0) {
+    const stockNum = Number.parseFloat(produit.stock)
+    if (isNaN(stockNum) || stockNum <= 0) {
       errors.stock = "Le stock doit être supérieur à 0"
     }
 
-    if (produit.prix <= 0) {
+    const prixNum = Number.parseFloat(produit.prix)
+    if (isNaN(prixNum) || prixNum <= 0) {
       errors.prix = "Le prix doit être supérieur à 0"
     }
 
     if (hasPromo) {
-      if (!produit.prixPromo || produit.prixPromo <= 0) {
+      const prixPromoNum = Number.parseFloat(produit.prixPromo)
+      if (isNaN(prixPromoNum) || prixPromoNum <= 0) {
         errors.prixPromo = "Le prix promotionnel doit être supérieur à 0"
-      } else if (produit.prixPromo >= produit.prix) {
+      } else if (prixPromoNum >= prixNum) {
         errors.prixPromo = "Le prix promotionnel doit être inférieur au prix normal"
       }
     }
@@ -210,6 +215,7 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    // Toujours stocker les valeurs comme des chaînes
     setProduit({ ...produit, [name]: value })
 
     // Clear error for this field when user types
@@ -222,7 +228,7 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
     const checked = e.target.checked
     setHasPromo(checked)
     if (!checked) {
-      setProduit({ ...produit, prixPromo: null })
+      setProduit({ ...produit, prixPromo: "" })
       if (formErrors.prixPromo) {
         setFormErrors({ ...formErrors, prixPromo: null })
       }
@@ -230,13 +236,16 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
   }
 
   const handlePercentChange = (e) => {
-    const percent = Number.parseFloat(e.target.value)
-    setPromoPercent(percent)
+    const percentValue = e.target.value
+    setPromoPercent(percentValue)
 
     // Calculer le nouveau prix promotionnel basé sur le pourcentage
-    if (percent > 0 && percent < 100 && produit.prix > 0) {
-      const newPromoPrice = produit.prix * (1 - percent / 100)
-      setProduit({ ...produit, prixPromo: Number.parseFloat(newPromoPrice.toFixed(3)) })
+    const percent = Number.parseFloat(percentValue)
+    const prix = Number.parseFloat(produit.prix)
+
+    if (!isNaN(percent) && percent > 0 && percent < 100 && !isNaN(prix) && prix > 0) {
+      const newPromoPrice = prix * (1 - percent / 100)
+      setProduit({ ...produit, prixPromo: newPromoPrice.toFixed(3) })
 
       // Clear error for prixPromo if it exists
       if (formErrors.prixPromo) {
@@ -254,10 +263,13 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
     setError(null)
 
     try {
-      // Si pas de promo, s'assurer que prixPromo est null
+      // Convertir les chaînes en nombres pour l'API
       const productData = {
         ...produit,
-        prixPromo: hasPromo ? produit.prixPromo : null,
+        prix: Number.parseFloat(produit.prix),
+        stock: Number.parseInt(produit.stock, 10),
+        // Si pas de promo, s'assurer que prixPromo est null
+        prixPromo: hasPromo ? (produit.prixPromo ? Number.parseFloat(produit.prixPromo) : null) : null,
       }
 
       const response = await editproduit(productData)
@@ -336,8 +348,14 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
 
   // Calculer le pourcentage de réduction
   const calculateDiscount = () => {
-    if (!hasPromo || !produit.prix || !produit.prixPromo || produit.prixPromo >= produit.prix) return 0
-    return Math.round(((produit.prix - produit.prixPromo) / produit.prix) * 100)
+    const prix = Number.parseFloat(produit.prix)
+    const prixPromo = Number.parseFloat(produit.prixPromo)
+
+    if (!hasPromo || isNaN(prix) || isNaN(prixPromo) || prix <= 0 || prixPromo <= 0 || prixPromo >= prix) {
+      return 0
+    }
+
+    return Math.round(((prix - prixPromo) / prix) * 100)
   }
 
   return (
@@ -425,7 +443,8 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
                   fullWidth
                   label="Prix"
                   name="prix"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={produit.prix}
                   onChange={handleChange}
                   error={!!formErrors.prix}
@@ -461,8 +480,9 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
                       fullWidth
                       label="Prix promotionnel"
                       name="prixPromo"
-                      type="number"
-                      value={produit.prixPromo || ""}
+                      type="text"
+                      inputMode="decimal"
+                      value={produit.prixPromo}
                       onChange={handleChange}
                       error={!!formErrors.prixPromo}
                       helperText={formErrors.prixPromo}
@@ -479,29 +499,31 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
                         fullWidth
                         label="Pourcentage de réduction"
                         name="promoPercent"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={promoPercent}
                         onChange={handlePercentChange}
                         InputProps={{
                           endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                          inputProps: { min: 0, max: 99 },
                         }}
                         helperText="Saisissez le pourcentage pour calculer automatiquement le prix promotionnel"
                       />
 
-                      {produit.prix > 0 && produit.prixPromo > 0 && produit.prixPromo < produit.prix && (
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Réduction:
-                          </Typography>
-                          <Chip
-                            label={`-${calculateDiscount()}%`}
-                            color="error"
-                            size="small"
-                            sx={{ fontWeight: "bold" }}
-                          />
-                        </Box>
-                      )}
+                      {Number.parseFloat(produit.prix) > 0 &&
+                        Number.parseFloat(produit.prixPromo) > 0 &&
+                        Number.parseFloat(produit.prixPromo) < Number.parseFloat(produit.prix) && (
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Réduction:
+                            </Typography>
+                            <Chip
+                              label={`-${calculateDiscount()}%`}
+                              color="error"
+                              size="small"
+                              sx={{ fontWeight: "bold" }}
+                            />
+                          </Box>
+                        )}
                     </Box>
                   </PromoSection>
                 )}
@@ -510,7 +532,8 @@ const Editproduit = ({ show, handleClose, pro, handleUpdateProduct }) => {
                   fullWidth
                   label="Quantité en stock"
                   name="stock"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={produit.stock}
                   onChange={handleChange}
                   error={!!formErrors.stock}

@@ -330,7 +330,7 @@ export default function ContactForm() {
       sx={{
         height:"50px",
         with:"100px",
-        bgcolor: "#ee004e",
+        bgcolor: "#1976d2",
         color: "white",
         "&:hover": {
           bgcolor: "#EE004F85",
@@ -375,9 +375,9 @@ export default function ContactForm() {
                     disabled={loading}
                     sx={{
                       minWidth: 150,
-                      bgcolor: "#7CDF73FF",
+                      bgcolor: "#F3236FFF",
                       "&:hover": {
-                        bgcolor: "#2BC037FF",
+                        bgcolor: "#D62465FF",
                       },
                     }}
                   >

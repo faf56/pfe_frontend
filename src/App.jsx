@@ -4,7 +4,6 @@ import "@mui/material/styles"
 import "bootstrap/dist/css/bootstrap.min.css"
 import "bootstrap/dist/js/bootstrap.bundle.min"
 import "@fortawesome/fontawesome-free/css/all.min.css"
-import { CartProvider } from "react-use-cart" 
 
 // Layouts
 import Header from "./components/common/Header"
@@ -45,6 +44,8 @@ import MarquesPage from "./pages/MarquesPage"
 import ProduitPromo from "./pages/ProduitPromo"
 import FavoritesPage from "./pages/FavoritesPage"
 
+import { CartProvider } from "react-use-cart"
+
 // 🔹 Layout Principal (avec Header et Footer)
 const MainLayout = () => (
   <>
@@ -76,8 +77,6 @@ function App() {
               <Route path="/produit/:id" element={<ProductDetail />} />
               <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
                 <Route path="/mon-compte" element={<MonCompte />} />
-                
-                
               </Route>
             </Route>
 
@@ -97,7 +96,7 @@ function App() {
             {/* 🔹 Routes Auth (Accessibles sans Layout spécifique) */}
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
-            <Route path="/register" element={<Register />} /> 
+            <Route path="/register" element={<Register />} />
           </Routes>
         </Router>
       </CartProvider>
