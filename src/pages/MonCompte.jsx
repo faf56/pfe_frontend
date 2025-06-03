@@ -144,7 +144,7 @@ const MonCompte = () => {
           fontWeight: "bold", 
           textAlign: "center" 
         }}>
-          VOTRE COMPTE
+          MON COMPTE
         </Typography>
 
         {/* Conteneur principal centré */}

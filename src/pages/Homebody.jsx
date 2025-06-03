@@ -182,7 +182,7 @@ const Homebody = () => {
                   Service client
                 </Typography>
                 <Typography variant="body2" className="service-description">
-                  Contactez-nous sur : (+216) 70 024 840
+                  Contactez-nous sur : (+216) 95 326 015
                 </Typography>
               </Paper>
             </Grid>

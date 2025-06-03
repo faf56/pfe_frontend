@@ -240,8 +240,8 @@ export default function ContactForm() {
               <Email sx={{ mr: 2, color: "primary.main" }} />
               <Box>
                 <Typography variant="subtitle2">Envoyez-nous un e-mail :</Typography>
-                <MuiLink href="mailto:info@beautystore.tn"  sx={{ fontWeight: 500, color: "#ee004e" }}>
-                steperlacoiff@gmail.com
+                <MuiLink href="mailto:perlacoif@gmail.com"  sx={{ fontWeight: 500, color: "#ee004e" }}>
+                perlacoif@gmail.com
                 </MuiLink>
               </Box>
             </Box>

@@ -12,7 +12,16 @@
   color: #000000;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) and (min-width: 600px) {
+  .promo-banner {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  
+  
+}
+@media (max-width: 599px) {
   .promo-banner {
     font-size: 12px;
     padding: 8px 10px;
@@ -21,12 +30,14 @@
   .promo-banner .center {
     display: none; /* Masquer le texte du centre sur mobile */
   }
+  
 }
 
 .promo-banner .left {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: 10px;
 }
 
 .promo-banner .center {
@@ -34,7 +45,7 @@
   text-align: center;
 }
 .promo-banner .right {
-  margin-right: 100px;
+  margin-right: 40px;
   text-align: center;
   cursor: pointer;
 }

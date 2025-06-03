@@ -480,27 +480,7 @@ const Checkout = () => {
                 />
               </Paper>
 
-              <Paper
-                sx={{
-                  p: 2,
-                  mb: 2,
-                  border: paymentMethod === "card" ? "2px solid #1976d2" : "1px solid #e0e0e0",
-                  borderRadius: 1,
-                }}
-              >
-                <FormControlLabel
-                  value="card"
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography variant="subtitle1">Carte bancaire</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Paiement sécurisé par carte bancaire
-                      </Typography>
-                    </Box>
-                  }
-                />
-              </Paper>
+              
             </RadioGroup>
           </FormControl>
         )

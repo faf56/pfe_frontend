@@ -20,6 +20,9 @@ import {
   Badge,
   styled,
   useTheme,
+  Slider,
+  TextField,
+  InputAdornment,
 } from "@mui/material"
 import {
   ExpandMore as ExpandMoreIcon,
@@ -28,6 +31,8 @@ import {
   BrandingWatermark as BrandIcon,
   Category as CategoryIcon,
   Check as CheckIcon,
+  AttachMoney as MoneyIcon,
+  LocalOffer as PromoIcon,
 } from "@mui/icons-material"
 
 // Styled components
@@ -136,16 +141,29 @@ const SelectedFiltersBox = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }))
 
+const PriceInputContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  gap: theme.spacing(2),
+  marginTop: theme.spacing(2),
+}))
+
 const FilterSidebar = ({ initialProducts, onFilterChange }) => {
   const theme = useTheme()
   const [marques, setMarques] = useState([])
   const [scategories, setScategories] = useState([])
   const [selectedMarques, setSelectedMarques] = useState([])
   const [selectedScategories, setSelectedScategories] = useState([])
+  const [showPromoOnly, setShowPromoOnly] = useState(false)
+  const [priceRange, setPriceRange] = useState([0, 1000])
+  const [minPrice, setMinPrice] = useState("")
+  const [maxPrice, setMaxPrice] = useState("")
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState({
     marques: true,
     categories: true,
+    price: true,
+    promo: true,
   })
 
   // Use refs to prevent infinite loops
@@ -168,6 +186,26 @@ const FilterSidebar = ({ initialProducts, onFilterChange }) => {
     loadFilters()
   }, [])
 
+  // Déterminer la plage de prix à partir des produits
+  useEffect(() => {
+    if (initialProducts.length > 0) {
+      const prices = initialProducts
+        .map((product) => {
+          // Utiliser le prix promo s'il existe, sinon le prix normal
+          return product.prixPromo && product.prixPromo < product.prix ? product.prixPromo : product.prix
+        })
+        .filter((price) => price !== undefined && price !== null)
+
+      if (prices.length > 0) {
+        const min = Math.floor(Math.min(...prices))
+        const max = Math.ceil(Math.max(...prices))
+        setPriceRange([min, max])
+        setMinPrice(min.toString())
+        setMaxPrice(max.toString())
+      }
+    }
+  }, [initialProducts])
+
   // Calcul des compteurs
   const counts = useMemo(() => {
     const marqueCounts = {}
@@ -189,12 +227,23 @@ const FilterSidebar = ({ initialProducts, onFilterChange }) => {
   useEffect(() => {
     if (!loading) {
       const filtered = initialProducts.filter((product) => {
+        // Filtre par marque
         const marqueMatch =
           selectedMarques.length === 0 || (product.marqueID && selectedMarques.includes(product.marqueID._id))
+
+        // Filtre par catégorie
         const scategorieMatch =
           selectedScategories.length === 0 ||
           (product.scategorieID && selectedScategories.includes(product.scategorieID._id))
-        return marqueMatch && scategorieMatch
+
+        // Filtre par prix
+        const productPrice = product.prixPromo && product.prixPromo < product.prix ? product.prixPromo : product.prix
+        const priceMatch = productPrice >= priceRange[0] && productPrice <= priceRange[1]
+
+        // Filtre par promotion
+        const promoMatch = !showPromoOnly || (product.prixPromo && product.prixPromo < product.prix)
+
+        return marqueMatch && scategorieMatch && priceMatch && promoMatch
       })
 
       // Compare current filtered products with previous filtered products
@@ -207,7 +256,7 @@ const FilterSidebar = ({ initialProducts, onFilterChange }) => {
         onFilterChange(filtered)
       }
     }
-  }, [selectedMarques, selectedScategories, initialProducts, loading, onFilterChange])
+  }, [selectedMarques, selectedScategories, priceRange, showPromoOnly, initialProducts, loading, onFilterChange])
 
   // Update prevProductsRef when initialProducts changes
   useEffect(() => {
@@ -229,9 +278,57 @@ const FilterSidebar = ({ initialProducts, onFilterChange }) => {
     }
   }
 
+  const handlePriceChange = (event, newValue) => {
+    setPriceRange(newValue)
+    setMinPrice(newValue[0].toString())
+    setMaxPrice(newValue[1].toString())
+  }
+
+  const handleMinPriceChange = (event) => {
+    const value = event.target.value
+    setMinPrice(value)
+
+    if (value === "" || isNaN(value)) return
+
+    const numValue = Number(value)
+    if (numValue >= 0 && numValue <= priceRange[1]) {
+      setPriceRange([numValue, priceRange[1]])
+    }
+  }
+
+  const handleMaxPriceChange = (event) => {
+    const value = event.target.value
+    setMaxPrice(value)
+
+    if (value === "" || isNaN(value)) return
+
+    const numValue = Number(value)
+    if (numValue >= priceRange[0]) {
+      setPriceRange([priceRange[0], numValue])
+    }
+  }
+
   const resetFilters = () => {
     setSelectedMarques([])
     setSelectedScategories([])
+    setShowPromoOnly(false)
+
+    // Reset price range to initial values from products
+    if (initialProducts.length > 0) {
+      const prices = initialProducts
+        .map((product) => {
+          return product.prixPromo && product.prixPromo < product.prix ? product.prixPromo : product.prix
+        })
+        .filter((price) => price !== undefined && price !== null)
+
+      if (prices.length > 0) {
+        const min = Math.floor(Math.min(...prices))
+        const max = Math.ceil(Math.max(...prices))
+        setPriceRange([min, max])
+        setMinPrice(min.toString())
+        setMaxPrice(max.toString())
+      }
+    }
   }
 
   const handleAccordionChange = (panel) => (event, isExpanded) => {
@@ -256,7 +353,7 @@ const FilterSidebar = ({ initialProducts, onFilterChange }) => {
     }
   }
 
-  const hasActiveFilters = selectedMarques.length > 0 || selectedScategories.length > 0
+  const hasActiveFilters = selectedMarques.length > 0 || selectedScategories.length > 0 || showPromoOnly
 
   if (loading) {
     return (
@@ -266,7 +363,7 @@ const FilterSidebar = ({ initialProducts, onFilterChange }) => {
           <Skeleton variant="circular" width={24} height={24} />
         </FilterHeader>
         <Divider sx={{ mb: 2 }} />
-        {[1, 2].map((i) => (
+        {[1, 2, 3].map((i) => (
           <Box key={i} sx={{ mb: 3 }}>
             <Skeleton variant="text" width={120} height={24} sx={{ mb: 1 }} />
             {[1, 2, 3, 4].map((j) => (
@@ -317,8 +414,99 @@ const FilterSidebar = ({ initialProducts, onFilterChange }) => {
               size="small"
             />
           ))}
+          {showPromoOnly && (
+            <Chip
+              label="En promotion"
+              onDelete={() => setShowPromoOnly(false)}
+              color="error"
+              variant="outlined"
+              size="small"
+            />
+          )}
         </SelectedFiltersBox>
       )}
+
+      {/* Filtre par promotion */}
+      <FilterAccordion expanded={expanded.promo} onChange={handleAccordionChange("promo")}>
+        <FilterAccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <PromoIcon color="error" fontSize="small" />
+            <Typography variant="subtitle1" fontWeight={500}>
+              Promotions
+            </Typography>
+          </Box>
+        </FilterAccordionSummary>
+        <FilterAccordionDetails>
+          <FormGroup>
+            <StyledFormControlLabel
+              control={
+                <Checkbox
+                  checked={showPromoOnly}
+                  onChange={(e) => setShowPromoOnly(e.target.checked)}
+                  size="small"
+                  color="error"
+                />
+              }
+              label="Afficher uniquement les produits en promotion"
+            />
+          </FormGroup>
+        </FilterAccordionDetails>
+      </FilterAccordion>
+
+      {/* Filtre par prix */}
+      <FilterAccordion expanded={expanded.price} onChange={handleAccordionChange("price")}>
+        <FilterAccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <MoneyIcon color="primary" fontSize="small" />
+            <Typography variant="subtitle1" fontWeight={500}>
+              Prix
+            </Typography>
+          </Box>
+        </FilterAccordionSummary>
+        <FilterAccordionDetails>
+          <Box sx={{ px: 1 }}>
+            <Slider
+              value={priceRange}
+              onChange={handlePriceChange}
+              valueLabelDisplay="auto"
+              min={0}
+              max={Math.max(1000, ...initialProducts.map((p) => p.prix || 0))}
+              step={5}
+              marks
+              valueLabelFormat={(value) => `${value} DT`}
+            />
+
+            <PriceInputContainer>
+              <TextField
+                label="Min"
+                value={minPrice}
+                onChange={handleMinPriceChange}
+                size="small"
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">DT</InputAdornment>,
+                }}
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
+              />
+              <TextField
+                label="Max"
+                value={maxPrice}
+                onChange={handleMaxPriceChange}
+                size="small"
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">DT</InputAdornment>,
+                }}
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
+              />
+            </PriceInputContainer>
+          </Box>
+        </FilterAccordionDetails>
+      </FilterAccordion>
 
       {/* Filtres par marque */}
       <FilterAccordion expanded={expanded.marques} onChange={handleAccordionChange("marques")}>

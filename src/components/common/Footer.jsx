@@ -87,13 +87,13 @@ const Footer = () => {
                 <i className="fa-regular fa-envelope"></i>{" "}
                 <u>
                   <a href="#" className="text-dark mx-2">
-                    steperlacoiff@gmail.com
+                    perlacoif@gmail.com
                   </a>
                 </u>
               </p>
               <p>
                 <i className="fa-solid fa-phone"></i>
-                <i> (+216) 29 810 530</i>
+                <i> (+216) 95 326 015</i>
               </p>
             </Col>
           </Row>

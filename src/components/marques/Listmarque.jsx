@@ -1,7 +1,32 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import Affichemarque from "./Affichemarque"
-import { CircularProgress, Box, Typography, Paper, Button, styled } from "@mui/material"
-import { Sell, RefreshOutlined, Add, PrintOutlined } from "@mui/icons-material"
+import {
+  CircularProgress,
+  Box,
+  Typography,
+  Paper,
+  Button,
+  styled,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Avatar,
+} from "@mui/material"
+import {
+  Sell,
+  RefreshOutlined,
+  Add,
+  PrintOutlined,
+  Close as CloseIcon,
+  DeleteOutline,
+  Warning as WarningIcon,
+} from "@mui/icons-material"
 import { fetchmarques, deletemarque } from "../../service/marqueservice"
 import Insertmarque from "./Insertmarque"
 import MarqueFilter from "./MarqueFilter"
@@ -32,12 +57,30 @@ const ActionButton = styled(Button)(({ theme, color = "#1976d2", bgcolor = "rgba
   },
 }))
 
+const BrandImage = styled("img")(({ theme }) => ({
+  width: 60,
+  height: 60,
+  borderRadius: "8px",
+  objectFit: "cover",
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+}))
+
 const Listmarque = () => {
   const [marques, setMarques] = useState([])
   const [error, setError] = useState(null)
   const [isPending, setIsPending] = useState(true)
   const [show, setShow] = useState(false)
   const [filteredMarques, setFilteredMarques] = useState([])
+
+  // États pour la confirmation de suppression
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [marqueToDelete, setMarqueToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
 
   const handleClose = () => setShow(false)
   const handleShow = () => setShow(true)
@@ -63,24 +106,65 @@ const Listmarque = () => {
   const handleAddmarque = (newmarque) => {
     setMarques([newmarque, ...marques])
     setFilteredMarques([newmarque, ...filteredMarques])
+
+    setSnackbar({
+      open: true,
+      message: "Marque ajoutée avec succès",
+      severity: "success",
+    })
   }
 
-  const handleDeleteMarque = async (marqueId) => {
+  // Ouvrir la boîte de dialogue de confirmation
+  const handleDeleteMarque = (marque) => {
+    setMarqueToDelete(marque)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleCloseDeleteDialog = () => {
+    if (!isDeleting) {
+      setDeleteDialogOpen(false)
+      setMarqueToDelete(null)
+    }
+  }
+
+  const handleDeleteMarqueConfirm = async () => {
+    if (!marqueToDelete) return
+
     try {
-      if (window.confirm("Êtes-vous sûr de vouloir supprimer cette marque ?")) {
-        await deletemarque(marqueId)
-        setMarques(marques.filter((marque) => marque._id !== marqueId))
-        setFilteredMarques(filteredMarques.filter((marque) => marque._id !== marqueId))
-      }
+      setIsDeleting(true)
+      await deletemarque(marqueToDelete._id)
+
+      setMarques(marques.filter((marque) => marque._id !== marqueToDelete._id))
+      setFilteredMarques(filteredMarques.filter((marque) => marque._id !== marqueToDelete._id))
+
+      setSnackbar({
+        open: true,
+        message: `La marque "${marqueToDelete.nommarque}" a été supprimée avec succès`,
+        severity: "success",
+      })
+
+      handleCloseDeleteDialog()
     } catch (error) {
-      console.log(error)
-      alert("Erreur lors de la suppression de la marque")
+      console.error("Erreur lors de la suppression de la marque:", error)
+      setSnackbar({
+        open: true,
+        message: "Erreur lors de la suppression de la marque",
+        severity: "error",
+      })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
   const handleUpdateMarque = (marq) => {
     setMarques(marques.map((marque) => (marque._id === marq._id ? marq : marque)))
     setFilteredMarques(filteredMarques.map((marque) => (marque._id === marq._id ? marq : marque)))
+
+    setSnackbar({
+      open: true,
+      message: `La marque "${marq.nommarque}" a été mise à jour avec succès`,
+      severity: "success",
+    })
   }
 
   const handleFilterChange = (filters) => {
@@ -93,6 +177,14 @@ const Listmarque = () => {
     }
 
     setFilteredMarques(result)
+  }
+
+  // Fermer le snackbar
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return
+    }
+    setSnackbar({ ...snackbar, open: false })
   }
 
   return (
@@ -173,6 +265,135 @@ const Listmarque = () => {
           />
         </>
       )}
+
+      {/* Boîte de dialogue de confirmation de suppression */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        disablePortal={true}
+        disableEnforceFocus={true}
+        disableAutoFocus={true}
+        disableRestoreFocus={true}
+        hideBackdrop={false}
+        keepMounted={false}
+        container={null}
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            padding: "8px",
+          },
+        }}
+        BackdropProps={{
+          sx: {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            bgcolor: "#ffebee",
+            borderRadius: "8px",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <WarningIcon color="error" />
+            <Typography variant="h6">Confirmer la suppression</Typography>
+          </Box>
+          <IconButton
+            onClick={handleCloseDeleteDialog}
+            size="small"
+            aria-label="Fermer"
+            disabled={isDeleting}
+            tabIndex={isDeleting ? -1 : 0}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent>
+          {marqueToDelete && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+              {marqueToDelete.imagemarque ? (
+                <BrandImage
+                  src={marqueToDelete.imagemarque}
+                  alt={marqueToDelete.nommarque}
+                  onError={(e) => {
+                    e.target.src = "/placeholder.svg?height=60&width=60"
+                  }}
+                />
+              ) : (
+                <Avatar
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    bgcolor: "rgba(25, 118, 210, 0.08)",
+                    color: "#1976d2",
+                  }}
+                >
+                  <Sell />
+                </Avatar>
+              )}
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {marqueToDelete.nommarque}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Marque
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          <Typography variant="body1" sx={{ color: "text.secondary", mt: 2 }}>
+            Êtes-vous sûr de vouloir supprimer cette marque ? Cette action est irréversible.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            disabled={isDeleting}
+            sx={{ borderRadius: "8px" }}
+            tabIndex={isDeleting ? -1 : 0}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteMarqueConfirm}
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={20} color="inherit" /> : <DeleteOutline />}
+            sx={{ borderRadius: "8px" }}
+            tabIndex={isDeleting ? -1 : 0}
+          >
+            {isDeleting ? "Suppression..." : "Supprimer"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar pour les notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: "100%", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       <Insertmarque show={show} handleClose={handleClose} handleAddmarque={handleAddmarque} />
     </Box>

@@ -7,7 +7,9 @@ import { Category, RefreshOutlined, Add, PrintOutlined } from "@mui/icons-materi
 import { fetchcategories, deletecategorie } from "../../service/categorieservice"
 import Insertcategorie from "./Insertcategorie"
 import CategorieFilter from "./CategorieFilter"
-
+import { Snackbar, Alert } from "@mui/material"
+import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton } from "@mui/material"
+import { Close as CloseIcon, DeleteOutline, Warning as WarningIcon } from "@mui/icons-material"
 // Styled components
 const PageHeader = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -41,6 +43,12 @@ const Listcategorie = () => {
   const [show, setShow] = useState(false)
   const [filteredCategories, setFilteredCategories] = useState([])
 
+  // États pour la confirmation de suppression
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [categorieToDelete, setCategorieToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
+
   const handleClose = () => setShow(false)
   const handleShow = () => setShow(true)
 
@@ -67,16 +75,45 @@ const Listcategorie = () => {
     setFilteredCategories([newcategorie, ...filteredCategories])
   }
 
-  const handleDeleteCategorie = async (categorieId) => {
+  // Ouvrir la boîte de dialogue de confirmation
+  const handleDeleteCategorie = (categorie) => {
+    setCategorieToDelete(categorie)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleCloseDeleteDialog = () => {
+    if (!isDeleting) {
+      setDeleteDialogOpen(false)
+      setCategorieToDelete(null)
+    }
+  }
+
+  const handleDeleteCategorieConfirm = async () => {
+    if (!categorieToDelete) return
+
     try {
-      if (window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) {
-        await deletecategorie(categorieId)
-        setCategories(categories.filter((categorie) => categorie._id !== categorieId))
-        setFilteredCategories(filteredCategories.filter((categorie) => categorie._id !== categorieId))
-      }
+      setIsDeleting(true)
+      await deletecategorie(categorieToDelete._id)
+
+      setCategories(categories.filter((categorie) => categorie._id !== categorieToDelete._id))
+      setFilteredCategories(filteredCategories.filter((categorie) => categorie._id !== categorieToDelete._id))
+
+      setSnackbar({
+        open: true,
+        message: `La catégorie "${categorieToDelete.nomcategorie}" a été supprimée avec succès`,
+        severity: "success",
+      })
+
+      handleCloseDeleteDialog()
     } catch (error) {
-      console.log(error)
-      alert("Erreur lors de la suppression de la catégorie")
+      console.error("Erreur lors de la suppression de la catégorie:", error)
+      setSnackbar({
+        open: true,
+        message: "Erreur lors de la suppression de la catégorie",
+        severity: "error",
+      })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -176,6 +213,121 @@ const Listcategorie = () => {
       )}
 
       <Insertcategorie show={show} handleClose={handleClose} handleAddcategorie={handleAddcategorie} />
+
+      {/* Boîte de dialogue de confirmation de suppression */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        disablePortal={false}
+        keepMounted={false}
+        disableEnforceFocus={false}
+        disableAutoFocus={false}
+        disableRestoreFocus={false}
+        hideBackdrop={false}
+        container={() => document.body}
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            padding: "8px",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            bgcolor: "#ffebee",
+            borderRadius: "8px",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <WarningIcon color="error" />
+            <Typography variant="h6">Confirmer la suppression</Typography>
+          </Box>
+          <IconButton
+            onClick={handleCloseDeleteDialog}
+            size="small"
+            disabled={isDeleting}
+            aria-label="Fermer la boîte de dialogue"
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent>
+          {categorieToDelete && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(25, 118, 210, 0.08)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Category sx={{ color: "#1976d2", fontSize: 30 }} />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {categorieToDelete.nomcategorie}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Catégorie principale
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          <Typography variant="body1" sx={{ color: "text.secondary", mt: 2 }}>
+            Êtes-vous sûr de vouloir supprimer cette catégorie ? Cette action est irréversible.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            disabled={isDeleting}
+            sx={{ borderRadius: "8px" }}
+            autoFocus={false}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteCategorieConfirm}
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={20} color="inherit" /> : <DeleteOutline />}
+            sx={{ borderRadius: "8px" }}
+            autoFocus={true}
+          >
+            {isDeleting ? "Suppression..." : "Supprimer"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notification */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ borderRadius: "8px" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

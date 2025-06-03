@@ -164,7 +164,7 @@ const Header = () => {
     <header>
       <div className="promo-banner">
         <span className="left">
-          <i className="fa fa-phone"></i> (+216) 21 298 233
+          <i className="fa fa-phone"></i> (+216) 95 326 015
         </span>
         <span className="center">
           <i className="fa-solid fa-truck-fast"></i> Livraison gratuite à partir de 99 DT d'achat

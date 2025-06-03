@@ -10,6 +10,8 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer"
 import Card from "../components/card/Card"
 import { Row, Col, Carousel } from "react-bootstrap"
 import { addToFavorites, removeFromFavorites, checkIsFavorite } from "../service/favoriteService"
+// Ajouter ces imports en haut du fichier
+import CartNotification from "../components/notifications/CartNotification"
 
 // Material UI imports
 import {
@@ -64,7 +66,7 @@ function TabPanel(props) {
 const ProductDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { addItem, getItem, updateItemQuantity } = useCart()
+  const { addItem, getItem, updateItemQuantity, cartTotal, items } = useCart()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -74,6 +76,9 @@ const ProductDetail = () => {
   const [loadingSimilar, setLoadingSimilar] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  // Ajouter cet état après les autres déclarations d'état
+  const [showNotification, setShowNotification] = useState(false)
+  const [addedProduct, setAddedProduct] = useState(null)
 
   const cartItem = getItem(id)
   const [quantity, setQuantity] = useState(cartItem ? cartItem.quantity : 1)
@@ -229,7 +234,7 @@ const ProductDetail = () => {
   // Déterminer le prix final à utiliser
   const finalPrice = hasPromo ? product?.prixPromo : product?.prix
 
-  // Ajouter au panier
+  // Remplacer la fonction handleAddToCart par celle-ci
   const handleAddToCart = (e) => {
     e.preventDefault() // Empêche le rechargement
     if (!product) return
@@ -249,7 +254,17 @@ const ProductDetail = () => {
 
     // Ajoutez l'article avec la quantité correcte
     addItem(cartItem, quantity)
-    setSnackbarOpen(true)
+
+    // Préparer les données pour la notification
+    setAddedProduct({ ...cartItem, quantity: quantity })
+
+    // Afficher la notification
+    setShowNotification(true)
+  }
+
+  // Ajouter cette fonction pour fermer la notification
+  const closeNotification = () => {
+    setShowNotification(false)
   }
 
   // Gérer le changement d'onglet
@@ -293,7 +308,7 @@ const ProductDetail = () => {
             Accueil
           </Link>
           {product?.scategorieID?.nomscategorie && (
-            <Link component={RouterLink} to={`/product/${product.scategorieID._id}`} underline="hover" color="inherit">
+            <Link component={RouterLink}  underline="hover" color="inherit">
               {product.scategorieID.nomscategorie}
             </Link>
           )}
@@ -386,12 +401,7 @@ const ProductDetail = () => {
                     {product.title}
                   </Typography>
 
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <Rating value={4} readOnly />
-                    <Typography variant="body2" sx={{ ml: 1 }}>
-                      (12 avis)
-                    </Typography>
-                  </Box>
+                  
 
                   {/* Affichage du prix avec promotion si disponible */}
                   {hasPromo ? (
@@ -530,7 +540,7 @@ const ProductDetail = () => {
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="product tabs" variant="fullWidth">
                 <Tab label="Description" id="product-tab-0" />
                 <Tab label="Caractéristiques" id="product-tab-1" />
-                <Tab label="Avis" id="product-tab-2" />
+                
               </Tabs>
 
               <Paper sx={{ mt: 1 }}>
@@ -619,16 +629,7 @@ const ProductDetail = () => {
                   </Grid>
                 </TabPanel>
 
-                <TabPanel value={tabValue} index={2}>
-                  <Box sx={{ textAlign: "center", py: 2 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      Aucun avis pour ce produit pour le moment.
-                    </Typography>
-                    <Button variant="outlined" sx={{ mt: 2 }}>
-                      Soyez le premier à donner votre avis
-                    </Button>
-                  </Box>
-                </TabPanel>
+                
               </Paper>
             </Box>
           </>
@@ -643,7 +644,7 @@ const ProductDetail = () => {
 
       {/* Section des produits de la même catégorie */}
       <div className="memcategorie-container">
-        <h2 className="title_similer">Produit Meme Categorie</h2>
+        <h2 className="title">Produit Meme Categorie</h2>
 
         {loadingSimilar ? (
           <div className="loading-container">
@@ -679,6 +680,20 @@ const ProductDetail = () => {
           </Carousel>
         )}
       </div>
+      {/* Ajouter ce composant juste avant la fermeture de la balise <> à la fin du composant */}
+      {/* Juste avant </> à la fin du composant */}
+      <CartNotification
+        open={showNotification}
+        onClose={closeNotification}
+        product={addedProduct}
+        quantity={quantity}
+        cartTotal={{
+          items: items?.length + (getItem(id) ? 0 : 1),
+          subtotal: cartTotal + quantity * (addedProduct?.price || 0),
+          shipping: 7.0,
+          total: cartTotal + quantity * (addedProduct?.price || 0) + 7.0,
+        }}
+      />
     </>
   )
 }

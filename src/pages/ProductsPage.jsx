@@ -12,17 +12,39 @@ import { fetchscategories } from "../service/scategorieservice"
 import Card from "../components/card/Card"
 import FilterSidebar from "../components/filter/FilterSidebar"
 import FilterSidebarMobile from "../components/filter/FilterSidebarMobile"
-import { Box, Container, Grid, Typography, Skeleton, useMediaQuery, useTheme, Paper, Button } from "@mui/material"
+import SortSelector from "../components/filter/SortSelector"
+import Pagination from "../components/pagination/Pagination"
+import {
+  Box,
+  Container,
+  Grid,
+  Typography,
+  Skeleton,
+  useMediaQuery,
+  useTheme,
+  Paper,
+  Button,
+  Breadcrumbs,
+  Link,
+  Divider,
+  Fade,
+} from "@mui/material"
+import { NavigateNext, Search, Category, LocalOffer } from "@mui/icons-material"
 import "./ProductCard.css"
 
 const ProductsPage = () => {
   const [allProducts, setAllProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
+  const [displayedProducts, setDisplayedProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(12)
+  const [sortOption, setSortOption] = useState("default")
   const location = useLocation()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  const isSmall = useMediaQuery(theme.breakpoints.down("sm"))
 
   // Fonction pour trouver une sous-catégorie par son nom
   const findScategorieByName = async (name) => {
@@ -42,6 +64,7 @@ const ProductsPage = () => {
       try {
         setLoading(true)
         setError(null)
+        setPage(1) // Réinitialiser la pagination lors du changement de filtre
 
         if (location.state?.filter === "category") {
           // Nouveau cas: filtrage par catégorie
@@ -105,11 +128,70 @@ const ProductsPage = () => {
     loadProducts()
   }, [location.state])
 
+  // Appliquer le tri et la pagination aux produits filtrés
+  useEffect(() => {
+    // Tri des produits
+    const sortedProducts = [...filteredProducts]
+
+    switch (sortOption) {
+      case "price_asc":
+        sortedProducts.sort((a, b) => {
+          const priceA = a.prixPromo || a.prix
+          const priceB = b.prixPromo || b.prix
+          return priceA - priceB
+        })
+        break
+      case "price_desc":
+        sortedProducts.sort((a, b) => {
+          const priceA = a.prixPromo || a.prix
+          const priceB = b.prixPromo || b.prix
+          return priceB - priceA
+        })
+        break
+      case "name_asc":
+        sortedProducts.sort((a, b) => a.title.localeCompare(b.title))
+        break
+      case "name_desc":
+        sortedProducts.sort((a, b) => b.title.localeCompare(a.title))
+        break
+      case "newest":
+        sortedProducts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        break
+      default:
+        // Par défaut, on garde l'ordre initial
+        break
+    }
+
+    // Pagination
+    const startIndex = (page - 1) * pageSize
+    const paginatedProducts = sortedProducts.slice(startIndex, startIndex + pageSize)
+
+    setDisplayedProducts(paginatedProducts)
+  }, [filteredProducts, page, pageSize, sortOption])
+
   // Gérer les changements de filtre - use memoized callback to prevent infinite loops
   const handleFilterChange = useCallback((filteredProductsList) => {
-    // Simply set the filtered products that come from the FilterSidebar
     setFilteredProducts(filteredProductsList)
+    setPage(1) // Réinitialiser à la première page lors du changement de filtre
   }, [])
+
+  const handlePageChange = (event, value) => {
+    setPage(value)
+    // Scroll to top when changing page
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handlePageSizeChange = (event) => {
+    setPageSize(event.target.value)
+    setPage(1) // Réinitialiser à la première page lors du changement de taille
+  }
+
+  const handleSortChange = (option) => {
+    setSortOption(option)
+  }
+
+  // Calcul du nombre total de pages
+  const pageCount = Math.ceil(filteredProducts.length / pageSize)
 
   // Titre de la page en fonction du filtre
   const getPageTitle = () => {
@@ -121,6 +203,17 @@ const ProductsPage = () => {
       return location.state.value
     } else {
       return "Tous les produits"
+    }
+  }
+
+  // Icône de la page en fonction du filtre
+  const getPageIcon = () => {
+    if (location.state?.filter === "search") {
+      return <Search sx={{ color: "primary.main", mr: 1 }} />
+    } else if (location.state?.filter === "promotions") {
+      return <LocalOffer sx={{ color: "error.main", mr: 1 }} />
+    } else {
+      return <Category sx={{ color: "secondary.main", mr: 1 }} />
     }
   }
 
@@ -162,8 +255,24 @@ const ProductsPage = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4,bgcolor: "#F2D7FB33" }}>
-      
+    <Container maxWidth="xl" sx={{ py: 4, bgcolor: "#F2D7FB33" }}>
+      {/* Fil d'Ariane */}
+      <Breadcrumbs separator={<NavigateNext fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 3 }}>
+        <Link color="inherit" href="/" underline="hover">
+          Accueil
+        </Link>
+        {location.state?.filter === "category" && (
+          <Typography color="text.primary">Catégorie: {location.state.value}</Typography>
+        )}
+        {location.state?.filter === "subcategory" && (
+          <Typography color="text.primary">Sous-catégorie: {location.state.value}</Typography>
+        )}
+        {location.state?.filter === "search" && (
+          <Typography color="text.primary">Recherche: {location.state.value}</Typography>
+        )}
+        {!location.state?.filter && <Typography color="text.primary">Tous les produits</Typography>}
+      </Breadcrumbs>
+
       <Grid container spacing={3}>
         {/* Sidebar pour desktop */}
         <Grid item xs={12} md={3} lg={2.5} sx={{ display: { xs: "none", md: "block" } }}>
@@ -173,31 +282,80 @@ const ProductsPage = () => {
         {/* Contenu principal */}
         <Grid item xs={12} md={9} lg={9.5}>
           <Box sx={{ mb: 3 }}>
-            <Typography variant="h5" component="h1" gutterBottom>
-              {getPageTitle()}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {filteredProducts.length} produits trouvés
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              {getPageIcon()}
+              <Typography variant="h5" component="h1">
+                {getPageTitle()}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 2,
+                mt: 2,
+              }}
+            >
+              <Typography variant="body1" color="text.secondary">
+                {filteredProducts.length} produits trouvés
+              </Typography>
+
+              <SortSelector onSortChange={handleSortChange} initialSort={sortOption} />
+            </Box>
+
+            <Divider sx={{ mt: 2 }} />
           </Box>
 
           {filteredProducts.length > 0 ? (
-            <Grid container spacing={2}>
-              {filteredProducts.map((pro) => (
-                <Grid item xs={6} sm={4} md={4} lg={3} key={pro._id}>
-                  <Card
-                    _id={pro._id}
-                    imagepro={pro.imagepro}
-                    title={pro.title}
-                    description={pro.description}
-                    prix={pro.prix}
-                    prixPromo={pro.prixPromo}
-                    stock={pro.stock}
-                    marqueID={pro.marqueID}
-                  />
+            <>
+              <Fade in={true} timeout={500}>
+                <Grid container spacing={2}>
+                  {displayedProducts.map((pro) => (
+                    <Grid
+                      item
+                      xs={6}
+                      sm={4}
+                      md={4}
+                      lg={3}
+                      key={pro._id}
+                      sx={{
+                        transition: "transform 0.3s ease-in-out",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                        },
+                      }}
+                    >
+                      <Card
+                        _id={pro._id}
+                        imagepro={pro.imagepro}
+                        title={pro.title}
+                        description={pro.description}
+                        prix={pro.prix}
+                        prixPromo={pro.prixPromo}
+                        stock={pro.stock}
+                        marqueID={pro.marqueID}
+                      />
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              </Fade>
+
+              {/* Pagination */}
+              {pageCount > 1 && (
+                <Pagination
+                  count={pageCount}
+                  page={page}
+                  onChange={handlePageChange}
+                  pageSize={pageSize}
+                  onPageSizeChange={handlePageSizeChange}
+                  pageSizeOptions={[12, 24, 36, 48]}
+                  showPageSize={!isSmall}
+                />
+              )}
+            </>
           ) : (
             <Paper
               sx={{

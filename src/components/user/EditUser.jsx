@@ -441,7 +441,7 @@ const EditUser = ({ open, handleClose, user: initialUser, handleUpdateUser }) =>
         >
           <StyledTab icon={<AccountCircle />} iconPosition="start" label="Profil" />
           <StyledTab icon={<Lock />} iconPosition="start" label="Mot de passe" />
-          <StyledTab icon={<Home />} iconPosition="start" label="Adresses" disabled />
+          
         </Tabs>
       </Box>
 

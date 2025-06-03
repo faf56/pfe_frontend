@@ -70,9 +70,6 @@ const BrandImage = styled("img")(({ theme }) => ({
   borderRadius: "8px",
   objectFit: "cover",
   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-  
-   
-  
 }))
 
 const Affichemarque = ({ marques, handleDeleteMarque, handleUpdateMarque }) => {
@@ -154,7 +151,7 @@ const Affichemarque = ({ marques, handleDeleteMarque, handleUpdateMarque }) => {
                         </ActionButton>
                       </Tooltip>
                       <Tooltip title="Supprimer">
-                        <ActionButton size="small" color="error" onClick={() => handleDeleteMarque(marque._id)}>
+                        <ActionButton size="small" color="error" onClick={() => handleDeleteMarque(marque)}>
                           <DeleteIcon fontSize="small" />
                         </ActionButton>
                       </Tooltip>
@@ -196,4 +193,3 @@ const Affichemarque = ({ marques, handleDeleteMarque, handleUpdateMarque }) => {
 }
 
 export default Affichemarque
-

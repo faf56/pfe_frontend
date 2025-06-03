@@ -157,7 +157,7 @@ const Affichescategorie = ({ scategories, handleDeleteScategorie, handleUpdateSc
                         </ActionButton>
                       </Tooltip>
                       <Tooltip title="Supprimer">
-                        <ActionButton size="small" color="error" onClick={() => handleDeleteScategorie(scategorie._id)}>
+                        <ActionButton size="small" color="error" onClick={() => handleDeleteScategorie(scategorie)}>
                           <DeleteIcon fontSize="small" />
                         </ActionButton>
                       </Tooltip>
@@ -199,4 +199,3 @@ const Affichescategorie = ({ scategories, handleDeleteScategorie, handleUpdateSc
 }
 
 export default Affichescategorie
-

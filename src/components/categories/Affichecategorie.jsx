@@ -134,7 +134,7 @@ const Affichecategorie = ({ categories, handleDeleteCategorie, handleUpdateCateg
                         </ActionButton>
                       </Tooltip>
                       <Tooltip title="Supprimer">
-                        <ActionButton size="small" color="error" onClick={() => handleDeleteCategorie(categorie._id)}>
+                        <ActionButton size="small" color="error" onClick={() => handleDeleteCategorie(categorie)}>
                           <DeleteIcon fontSize="small" />
                         </ActionButton>
                       </Tooltip>
@@ -176,4 +176,3 @@ const Affichecategorie = ({ categories, handleDeleteCategorie, handleUpdateCateg
 }
 
 export default Affichecategorie
-

@@ -11,12 +11,15 @@ import {
 } from "../../service/favoriteService"
 import "./card.css"
 import { Favorite, FavoriteBorder } from "@mui/icons-material"
+import CartNotification from "../notifications/CartNotification"
 
 const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqueID }) => {
-  const { addItem } = useCart()
+  const { addItem, items, cartTotal } = useCart()
   const navigate = useNavigate()
   const [isFavorite, setIsFavorite] = useState(checkIsFavoriteSync(_id))
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showNotification, setShowNotification] = useState(false)
+  const [addedProduct, setAddedProduct] = useState(null)
 
   useEffect(() => {
     // Vérifier de manière asynchrone si le produit est dans les favoris
@@ -88,7 +91,7 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
   const addToCart = (e) => {
     e.stopPropagation()
 
-    const pro = {
+    const product = {
       id: _id, // react-use-cart utilise id comme identifiant unique
       image: imagepro,
       name: title, // react-use-cart utilise name au lieu de title
@@ -101,85 +104,116 @@ const Card = ({ imagepro, title, description, prix, prixPromo, stock, _id, marqu
       marque: marqueID?.nommarque,
     }
 
-    addItem(pro)
-    alert(
-      `Produit ajouté au panier avec succès!\nNom: ${title}\nID: ${_id}\nPrix: ${finalPrice} TND\nMarque: ${marqueID?.nommarque || "Non spécifiée"}`,
-    )
+    addItem(product)
+
+    // Préparer les données pour la notification
+    setAddedProduct(product)
+
+    // Calculer les totaux du panier
+    const cartTotalInfo = {
+      items: items.length + 1, // +1 car l'item qu'on vient d'ajouter n'est pas encore compté
+      subtotal: cartTotal + finalPrice,
+      shipping: 7.0, // Frais de livraison fixes
+      total: cartTotal + finalPrice + 7.0,
+    }
+
+    // Afficher la notification
+    setShowNotification(true)
+  }
+
+  const closeNotification = () => {
+    setShowNotification(false)
   }
 
   return (
-    <div
-      className="card"
-      onClick={() => {
-        if (_id) {
-          navigate(`/produit/${_id}`)
-        } else {
-          console.error("Erreur: ID du produit est undefined !")
-        }
-      }}
-      style={{ cursor: "pointer" }}
-    >
-      <button
-        className="favorite-button"
-        onClick={toggleFavorite}
-        disabled={isProcessing}
-        style={{
-          position: "absolute",
-          top: "10px",
-          left: "10px",
-          background: "rgba(255, 255, 255, 0.8)",
-          border: "none",
-          borderRadius: "50%",
-          width: "30px",
-          height: "30px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: isProcessing ? "wait" : "pointer",
-          zIndex: 2,
+    <>
+      <div
+        className="card"
+        onClick={() => {
+          if (_id) {
+            navigate(`/produit/${_id}`)
+          } else {
+            console.error("Erreur: ID du produit est undefined !")
+          }
         }}
+        style={{ cursor: "pointer" }}
       >
-        {isFavorite ? <Favorite style={{ color: "#FC6A80FF" }} /> : <FavoriteBorder style={{ color: "#666" }} />}
-      </button>
-      {hasPromo && (
-        <div
+        <button
+          className="favorite-button"
+          onClick={toggleFavorite}
+          disabled={isProcessing}
           style={{
             position: "absolute",
             top: "10px",
-            right: "10px",
-            backgroundColor: "#FF0000",
-            color: "white",
-            padding: "4px 8px",
-            borderRadius: "20px",
-            fontWeight: "bold",
-            fontSize: "0.8rem",
+            left: "10px",
+            background: "rgba(255, 255, 255, 0.8)",
+            border: "none",
+            borderRadius: "50%",
+            width: "30px",
+            height: "30px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: isProcessing ? "wait" : "pointer",
             zIndex: 2,
-            boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
           }}
         >
-          -{discountPercent}%
-        </div>
-      )}
-      {imagepro && <img src={imagepro || "/placeholder.svg"} alt={title} />}
-      <div className="card-content">
-        <h1 className="card-title">{title.length > 25 ? `${title.substring(0, 25)}...` : title}</h1>
-        {marqueID && marqueID.nommarque && <p className="card-marque">{marqueID.nommarque}</p>}
-
-        {/* Display both prices if there's a promotional price */}
-        {hasPromo ? (
-          <div className="price-container">
-            <h1 className="card-title promo-price">Prix : {prixPromo.toFixed(3)} TND</h1>
-            <span className="original-price">{prix.toFixed(3)} TND</span>
-          </div>
-        ) : (
-          <h1 className="card-prix">Prix : {prix.toFixed(3)} TND</h1>
-        )}
-
-        <button className="card-button" onClick={addToCart}>
-          <i className="fa-solid fa-basket-shopping"></i> Ajouter au panier
+          {isFavorite ? <Favorite style={{ color: "#FC6A80FF" }} /> : <FavoriteBorder style={{ color: "#666" }} />}
         </button>
+        {hasPromo && (
+          <div
+            style={{
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              backgroundColor: "#FF0000",
+              color: "white",
+              padding: "4px 8px",
+              borderRadius: "20px",
+              fontWeight: "bold",
+              fontSize: "0.8rem",
+              zIndex: 2,
+              boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+            }}
+          >
+            -{discountPercent}%
+          </div>
+        )}
+        {imagepro && <img src={imagepro || "/placeholder.svg"} alt={title} />}
+        <div className="card-content">
+          <h1 className="card-title">{title.length > 25 ? `${title.substring(0, 25)}...` : title}</h1>
+          {marqueID && marqueID.nommarque && <p className="card-marque">{marqueID.nommarque}</p>}
+
+          {/* Display both prices if there's a promotional price */}
+          {hasPromo ? (
+            <div className="price-container">
+              <h1 className="card-title promo-price">Prix : {prixPromo.toFixed(3)} TND</h1>
+              <span className="original-price">{prix.toFixed(3)} TND</span>
+            </div>
+          ) : (
+            <h1 className="card-prix">Prix : {prix.toFixed(3)} TND</h1>
+          )}
+
+          <button className="card-button" onClick={addToCart}>
+            <i className="fa-solid fa-basket-shopping"></i> Ajouter au panier
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Notification stylisée pour l'ajout au panier */}
+      <CartNotification
+        open={showNotification}
+        onClose={closeNotification}
+        product={addedProduct}
+        quantity={1}
+        cartTotal={{
+          items: items.length + 1,
+          subtotal: cartTotal + (addedProduct?.price || 0),
+          shipping: 7.0,
+          total: cartTotal + (addedProduct?.price || 0) + 7.0,
+        }}
+      />
+    </>
   )
 }
 

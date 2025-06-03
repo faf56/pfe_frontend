@@ -3,8 +3,31 @@
 import { useEffect, useState } from "react"
 import Afficheproduit from "./Afficheproduit"
 import ProduitFilter from "./ProduitFilter"
-import { CircularProgress, Box, Typography, Paper, Button, styled } from "@mui/material"
-import { PrintOutlined, Inventory2Outlined, RefreshOutlined, Add } from "@mui/icons-material"
+import {
+  CircularProgress,
+  Box,
+  Typography,
+  Paper,
+  Button,
+  styled,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Avatar,
+} from "@mui/material"
+import {
+  PrintOutlined,
+  Inventory2Outlined,
+  RefreshOutlined,
+  Add,
+  Close as CloseIcon,
+  DeleteOutline,
+  Warning as WarningIcon,
+} from "@mui/icons-material"
 import { fetchproduits, deleteproduit } from "../../service/produitservice"
 import Insertproduit from "./Insertproduit"
 
@@ -36,8 +59,6 @@ const StatCard = styled(Paper)(({ theme }) => ({
   alignItems: "center",
   gap: "16px",
   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-  
-  
 }))
 
 const StatIcon = styled(Box)(({ theme, color }) => ({
@@ -70,6 +91,16 @@ const Listproduit = () => {
   const [isPending, setIsPending] = useState(true)
   const [show, setShow] = useState(false)
 
+  // États pour la confirmation de suppression
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
+
   const handleClose = () => setShow(false)
   const handleShow = () => setShow(true)
 
@@ -94,24 +125,66 @@ const Listproduit = () => {
   const handleAddproduct = (newproduit) => {
     setProduits([newproduit, ...produits])
     setFilteredProduits([newproduit, ...filteredProduits])
+
+    // Afficher un message de succès
+    setSnackbar({
+      open: true,
+      message: "Produit ajouté avec succès",
+      severity: "success",
+    })
   }
 
-  const handleDeleteProduct = async (productId) => {
+  // Ouvrir la boîte de dialogue de confirmation
+  const handleDeleteConfirmation = (productId) => {
+    const product = produits.find((p) => p._id === productId)
+    setProductToDelete(product)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false)
+    setProductToDelete(null)
+  }
+
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return
+
     try {
-      if (window.confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
-        await deleteproduit(productId)
-        setProduits(produits.filter((product) => product._id !== productId))
-        setFilteredProduits(filteredProduits.filter((product) => product._id !== productId))
-      }
+      setIsDeleting(true)
+      await deleteproduit(productToDelete._id)
+
+      setProduits(produits.filter((product) => product._id !== productToDelete._id))
+      setFilteredProduits(filteredProduits.filter((product) => product._id !== productToDelete._id))
+
+      setSnackbar({
+        open: true,
+        message: `Le produit "${productToDelete.title}" a été supprimé avec succès`,
+        severity: "success",
+      })
+
+      handleCloseDeleteDialog()
     } catch (error) {
-      console.log(error)
-      alert("Erreur lors de la suppression du produit")
+      console.error("Erreur lors de la suppression du produit:", error)
+      setSnackbar({
+        open: true,
+        message: "Erreur lors de la suppression du produit",
+        severity: "error",
+      })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
   const handleUpdateProduct = (prmod) => {
     setProduits(produits.map((product) => (product._id === prmod._id ? prmod : product)))
     setFilteredProduits(filteredProduits.map((product) => (product._id === prmod._id ? prmod : product)))
+
+    // Afficher un message de succès
+    setSnackbar({
+      open: true,
+      message: `Le produit "${prmod.title}" a été mis à jour avec succès`,
+      severity: "success",
+    })
   }
 
   const handleFilterChange = (filters) => {
@@ -158,12 +231,26 @@ const Listproduit = () => {
       )
     }
 
+    // Filter by promotion
+    if (filters.promoOnly) {
+      result = result.filter(
+        (product) => product.prixPromo && product.prixPromo > 0 && product.prixPromo < product.prix,
+      )
+    }
+
     setFilteredProduits(result)
+  }
+
+  // Fermer le snackbar
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return
+    }
+    setSnackbar({ ...snackbar, open: false })
   }
 
   // Calculate statistics
   const totalProducts = produits.length
-  
 
   return (
     <Box sx={{ padding: "24px" }}>
@@ -226,14 +313,10 @@ const Listproduit = () => {
             </Typography>
           </Box>
         </StatCard>
-
-        
-
-        
       </StatsContainer>
 
       <Box sx={{ my: 3 }}>
-        <ProduitFilter onFilterChange={handleFilterChange} produits={produits} />
+        <ProduitFilter onFilterChange={handleFilterChange} produits={produits} showPromoFilter={true} />
       </Box>
 
       {isPending ? (
@@ -258,10 +341,104 @@ const Listproduit = () => {
       ) : (
         <Afficheproduit
           produits={filteredProduits}
-          handleDeleteProduct={handleDeleteProduct}
+          handleDeleteProduct={handleDeleteConfirmation}
           handleUpdateProduct={handleUpdateProduct}
         />
       )}
+
+      {/* Boîte de dialogue de confirmation de suppression */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            padding: "8px",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            bgcolor: "#ffebee",
+            borderRadius: "8px",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <WarningIcon color="error" />
+            <Typography variant="h6">Confirmer la suppression</Typography>
+          </Box>
+          <IconButton onClick={handleCloseDeleteDialog} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent>
+          {productToDelete && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+              <Avatar
+                src={productToDelete.imagepro}
+                alt={productToDelete.title}
+                variant="rounded"
+                sx={{ width: 60, height: 60, borderRadius: "8px" }}
+              />
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {productToDelete.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {productToDelete.description}
+                </Typography>
+                <Typography variant="body2" color="primary" fontWeight="medium" sx={{ mt: 0.5 }}>
+                  Prix: {productToDelete.prix?.toFixed(3)} DT
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          <Typography variant="body1" sx={{ color: "text.secondary", mt: 2 }}>
+            Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={handleCloseDeleteDialog} disabled={isDeleting} sx={{ borderRadius: "8px" }}>
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteProduct}
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={20} color="inherit" /> : <DeleteOutline />}
+            sx={{ borderRadius: "8px" }}
+          >
+            {isDeleting ? "Suppression..." : "Supprimer"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar pour les notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: "100%", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       <Insertproduit show={show} handleClose={handleClose} handleAddproduct={handleAddproduct} />
     </Box>
